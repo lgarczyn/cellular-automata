@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start c:/Projects/Claude/cellular-automata/index.html)",
+      "Bash(node -e \":*)",
+      "Bash(start index.html)"
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cellular Automata Explorer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>Cellular Automata Explorer</h1>
+  <p>An interactive tour of elementary and arithmetic cellular automata
+     — from simple rules to the Collatz conjecture.</p>
+</header>
+
+<nav id="main-nav">
+  <a href="#rule110">Rule 110</a>
+  <a href="#div2">Division ÷2</a>
+  <a href="#mul3">Multiply ×3</a>
+  <a href="#mul3plus1">3x + 1</a>
+  <a href="#collatz-step">3x+1 / 2</a>
+  <a href="#collatz-hex">3x+1 Hex</a>
+
+</nav>
+
+<div id="main"></div>
+
+<footer>Cellular Automata Explorer — zero dependencies, pure HTML / CSS / JS.</footer>
+
+<script src="ca-base.js"></script>
+<script src="ca-renderer.js"></script>
+<script src="ca-rule110.js"></script>
+<script src="ca-div2.js"></script>
+<script src="ca-mul3.js"></script>
+<script src="ca-mul3plus1.js"></script>
+<script src="ca-collatz-step.js"></script>
+<script src="ca-collatz-hex.js"></script>
+<script src="ca-app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+"use strict";
+
+// Collatz step: 3x+1 with automatic /2.
+// Same as 3x+1, but LeastEdge also spreads diagonally:
+// if a cell computes to digit 0 and the cell above-right is LeastEdge,
+// it becomes LeastEdge — effectively dividing by 2.
+
+CA.CollatzStep = class CollatzStep extends CA.MulBy3Plus1 {
+
+  constructor({ displayMode = 'grid' } = {}) {
+    super({ displayMode });
+    this.name = '3x+1 / 2';
+    this.description =
+      'Collatz step: 3x+1 then divide out factors of 2. '
+    + 'The LeastEdge expands diagonally into trailing zeros, performing /2 automatically.';
+  }
+
+  suggestSize(input) {
+    const b = CA.CellularAutomaton.bitLength(input);
+    return { width: b + 200, height: 1000 };
+  }
+
+  run(input, width, height) {
+    const size = this.suggestSize(input);
+    this.allocate(width ?? size.width, height ?? size.height);
+    this.initGrid(input);
+    let lastRow = 0;
+    for (let r = this.seedRows; r < this.height; r++) {
+      this.computeRow(r);
+      lastRow = r;
+      if (this.readRow(r) === 1) break;
+    }
+    // Trim unused rows
+    this.grid.length = lastRow + 1;
+    this.height = this.grid.length;
+    return this.grid;
+  }
+
+  readRow(r) {
+    // Find the first non-LeastEdge column (the LSB of the actual number)
+    let start = 0;
+    while (start < this.width && this.get(r, start) === CA.LEAST_EDGE) start++;
+    // Skip trailing zeros above the LeastEdge boundary
+    while (start < this.width) {
+      const cell = this.get(r, start);
+      if (cell === null || cell.digit !== 0) break;
+      start++;
+    }
+    let n = 0;
+    for (let c = this.width - 1; c >= start; c--) {
+      const cell = this.get(r, c);
+      if (cell !== null && cell !== CA.LEAST_EDGE) n = n * 2 + cell.digit;
+    }
+    return n;
+  }
+
+  computeCell(r, c) {
+    const above = this.get(r - 1, c);
+    if (above === CA.LEAST_EDGE) return CA.LEAST_EDGE;
+
+    const shifted = this.get(r - 1, c - 1);
+    const same    = above;
+    const left    = this.get(r, c - 1);
+
+    const carryIn = left?.carry ?? 0;
+    if (shifted === null && same === null && carryIn === 0) return null;
+    const sum = (shifted?.digit ?? 0) + (same?.digit ?? 0) + carryIn;
+    const digit = sum % 2;
+    const carry = sum >= 2 ? 1 : 0;
+
+    if (above?.digit == 0 && left === CA.LEAST_EDGE) return CA.LEAST_EDGE;
+
+    return { digit, carry };
+  }
+};
