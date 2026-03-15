@@ -9,9 +9,9 @@ CA.Renderer = class Renderer {
 
   render(opts = {}) {
     const mode = this.automaton.displayMode;
-    if (mode === 'hexgrid')    this._renderHexGrid(opts);
-    else if (mode === 'hex')   this._renderHex(opts);
-    else                       this._renderGrid(opts);
+    if (mode === 'hexgrid')         this._renderHexGrid(opts);
+    else if (mode === 'hex')        this._renderHex(opts);
+    else                            this._renderGrid(opts);
   }
 
   // ── Square grid (table) ──────────────────────────────────────────
@@ -27,7 +27,7 @@ CA.Renderer = class Renderer {
       const tr = document.createElement('tr');
       if (showRowLabels) tr.appendChild(this._labelTD(r));
       for (let c = grid[r].length - 1; c >= 0; c--) {
-        const td = this._makeTD(grid[r][c], a);
+        const td = this._makeTD(grid[r][c], a, r, c);
         td.dataset.row = r;
         td.dataset.col = c;
         cellMap.set(`${r},${c}`, td);
@@ -98,8 +98,9 @@ CA.Renderer = class Renderer {
     const grid = trimBlanks ? a.trimmedGrid() : a.grid;
 
     const R       = cellSize / 2;
+    const drawR   = R - 2;               // smaller for 4px gap
     const sqrt3   = Math.sqrt(3);
-    const hexW    = sqrt3 * R;            // pointy-top hex width
+    const hexW    = sqrt3 * R;            // pointy-top hex width (spacing)
 
     const numRows = grid.length;
     const numCols = grid[0]?.length ?? 0;
@@ -108,24 +109,14 @@ CA.Renderer = class Renderer {
     const padX   = hexW / 2 + 8;
     const padY   = R + (showRowLabels ? 16 : 2);
 
-    const svgW = padX + (numRows - 1) * hexW + (numCols - 1) * hexW / 2 + hexW / 2 + valueW + 8;
-    const svgH = padY + (numCols - 1) * 1.5 * R + R + 4;
+    const svgW = padX + (numCols - 1) * hexW + (numRows - 1) * hexW / 2 + hexW / 2 + valueW + 8;
+    const svgH = padY + (numRows - 1) * 1.5 * R + R + 4;
 
     const NS  = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(NS, 'svg');
     svg.setAttribute('width', svgW);
     svg.setAttribute('height', svgH);
     svg.style.display = 'block';
-
-    // Rotate 60° CW — compute rotated bounding box for the container
-    const angle = 60;
-    const rad = angle * Math.PI / 180;
-    const cosA = Math.abs(Math.cos(rad));
-    const sinA = Math.abs(Math.sin(rad));
-    const rotW = svgW * cosA + svgH * sinA;
-    const rotH = svgW * sinA + svgH * cosA;
-    svg.style.transform = `rotate(${angle}deg)`;
-    svg.style.transformOrigin = 'center center';
 
     // Inject hover style for row values
     const style = document.createElementNS(NS, 'style');
@@ -143,32 +134,23 @@ CA.Renderer = class Renderer {
       const g = document.createElementNS(NS, 'g');
       g.setAttribute('class', 'hex-row');
 
-      // Row label at the top of the diagonal (c=0 = MSB, top of stripe)
-      if (showRowLabels) {
-        const lx = padX + r * hexW;
-        const ly = padY - R - 3;
-        const txt = document.createElementNS(NS, 'text');
-        txt.setAttribute('x', lx);
-        txt.setAttribute('y', ly);
-        txt.setAttribute('text-anchor', 'middle');
-        txt.setAttribute('fill', '#8b949e');
-        txt.setAttribute('font-size', '9');
-        txt.setAttribute('font-family', 'sans-serif');
-        txt.textContent = r;
-        g.appendChild(txt);
-      }
+      let firstCellX = null;
+      const cy = padY + r * 1.5 * R;
 
-      for (let c = 0; c < grid[r].length; c++) {
-        const cx = padX + r * hexW + c * hexW / 2;
-        const cy = padY + c * 1.5 * R;
+      for (let c = grid[r].length - 1; c >= 0; c--) {
+        const dc = grid[r].length - 1 - c;
+        const cx = padX + dc * hexW + r * hexW / 2;
 
         const cell  = grid[r][c];
-        const cs    = a.cellStyle(cell);
+        if (cell === null || cell === a.blankState) continue;
+        const cs    = a.cellStyle(cell, r, c);
+        if (cs.hidden) continue;
+        if (firstCellX === null) firstCellX = cx;
         const carry = cs.carry || false;
 
         // Hexagon
         const poly = document.createElementNS(NS, 'polygon');
-        poly.setAttribute('points', this._hexPoints(cx, cy, R));
+        poly.setAttribute('points', this._hexPoints(cx, cy, drawR));
         poly.setAttribute('fill', cs.colors[0]);
         poly.setAttribute('stroke', carry ? carryStroke : defaultStroke);
         poly.setAttribute('stroke-width', carry ? '2.5' : '1');
@@ -192,13 +174,26 @@ CA.Renderer = class Renderer {
         }
       }
 
+      // Row label next to first visible cell
+      if (showRowLabels && firstCellX !== null) {
+        const txt = document.createElementNS(NS, 'text');
+        txt.setAttribute('x', firstCellX - hexW / 2 - 4);
+        txt.setAttribute('y', cy + 4);
+        txt.setAttribute('text-anchor', 'end');
+        txt.setAttribute('fill', '#8b949e');
+        txt.setAttribute('font-size', '9');
+        txt.setAttribute('font-family', 'sans-serif');
+        txt.textContent = r;
+        g.appendChild(txt);
+      }
+
       // Row value (hidden until hover)
       if (showValues) {
         const n = a.readRow(r);
         if (n !== null) {
           const lastC = Math.max(0, grid[r].length - 1);
-          const valX = padX + r * hexW + lastC * hexW / 2 + hexW / 2 + 10;
-          const valY = padY + lastC * 1.5 * R + 4;
+          const valX = padX + lastC * hexW + r * hexW / 2 + hexW / 2 + 10;
+          const valY = cy + 4;
           const txt  = document.createElementNS(NS, 'text');
           txt.setAttribute('x', valX);
           txt.setAttribute('y', valY);
@@ -217,15 +212,7 @@ CA.Renderer = class Renderer {
     this._attachHexHover(svg, polyMap, a, NS);
 
     this.container.innerHTML = '';
-    const wrapper = document.createElement('div');
-    wrapper.style.width  = rotW + 'px';
-    wrapper.style.height = rotH + 'px';
-    wrapper.style.display = 'flex';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.justifyContent = 'center';
-    wrapper.style.overflow = 'visible';
-    wrapper.appendChild(svg);
-    this.container.appendChild(wrapper);
+    this.container.appendChild(svg);
   }
 
   // Flat-top hexagon vertex string for SVG polygon
@@ -319,9 +306,9 @@ CA.Renderer = class Renderer {
     return td;
   }
 
-  _makeTD(value, automaton) {
+  _makeTD(value, automaton, r, c) {
     const td    = document.createElement('td');
-    const style = automaton.cellStyle(value);
+    const style = automaton.cellStyle(value, r, c);
     const colors = style.colors;
 
     if (colors.length === 1) {

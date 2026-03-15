@@ -41,11 +41,16 @@ CA.MulBy3Plus1 = class MulBy3Plus1 extends CA.MulBy3 {
     return { digit: sum % 2, carry: sum >= 2 ? 1 : 0 };
   }
 
-  cellStyle(cell) {
-    if (cell === CA.LEAST_EDGE) return {
-      text: '0', colors: ['#1b2a1b'], fg: '#3fb950', carry: true,
-    };
-    return super.cellStyle(cell);
+  cellStyle(cell, r, c) {
+    if (cell === CA.LEAST_EDGE) {
+      // Only show LeastEdge style for the leftmost one (boundary)
+      const right = (r !== undefined && c !== undefined) ? this.get(r, c + 1) : null;
+      if (right === CA.LEAST_EDGE) {
+        return { text: '', colors: ['#0d1117'], fg: '#333', hidden: true };
+      }
+      return { text: '0', colors: ['#1b2a1b'], fg: '#3fb950', carry: true };
+    }
+    return super.cellStyle(cell, r, c);
   }
 
   readRow(r) {

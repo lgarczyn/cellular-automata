@@ -43,7 +43,7 @@ CA.CellularAutomaton = class CellularAutomaton {
   // Override in subclasses
   initGrid(input) {}
   computeCell(r, c) { return this.blankState; }
-  cellStyle(value)  { return { text: String(value), colors: ['#1a1e24'], fg: '#888' }; }
+  cellStyle(value, r, c) { return { text: String(value), colors: ['#1a1e24'], fg: '#888' }; }
   readRow(r)        { return null; }
   suggestSize()     { return { width: 40, height: 40 }; }
   sourceCells(r, c) { return []; }

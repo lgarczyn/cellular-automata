@@ -98,7 +98,7 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
   border-radius: 8px;
   background: var(--surface);
 }
-.grid-wrap table { border-collapse: collapse; }
+.grid-wrap table { border-collapse: separate; border-spacing: 2px; }
 .grid-wrap td {
   width: var(--cell-size);
   height: var(--cell-size);
