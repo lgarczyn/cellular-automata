@@ -177,9 +177,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const inp = document.createElement('input');
       inp.type  = ctrl.type || 'number';
-      inp.value = sec.defaults[ctrl.key] ?? '';
+      const storageKey = `ca_${sec.id}_${ctrl.key}`;
+      inp.value = localStorage.getItem(storageKey) ?? sec.defaults[ctrl.key] ?? '';
       if (ctrl.min !== undefined) inp.min = ctrl.min;
       if (ctrl.max !== undefined) inp.max = ctrl.max;
+      inp.addEventListener('change', () => localStorage.setItem(storageKey, inp.value));
       controls.appendChild(inp);
       inputs[ctrl.key] = inp;
     }
@@ -246,28 +248,34 @@ document.addEventListener('DOMContentLoaded', () => {
       naturalH = el.scrollHeight || el.offsetHeight;
     };
 
+    let pendingZoom = null;
+    let zoomAnchor = null;
     gridWrap.addEventListener('wheel', e => {
       if (!e.altKey) return;
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
-      const newZoom = Math.min(1, Math.max(0.05, zoom * factor));
 
       const rect = gridWrap.getBoundingClientRect();
       const vw = gridWrap.clientWidth;
       const vh = gridWrap.clientHeight;
       const padX = vw / 2;
       const padY = vh / 2;
-      // Mouse position in content-space before zoom
       const mx = (e.clientX - rect.left + gridWrap.scrollLeft - padX) / zoom;
       const my = (e.clientY - rect.top  + gridWrap.scrollTop  - padY) / zoom;
 
-      zoom = newZoom;
+      zoom = Math.min(1, Math.max(0.05, zoom * factor));
       zoomSlider.disabled = false;
-      applyZoom();
+      zoomAnchor = { mx, my, cx: e.clientX - rect.left, cy: e.clientY - rect.top, padX, padY };
 
-      // Adjust scroll so the content point under the mouse stays put
-      gridWrap.scrollLeft = mx * zoom + padX - (e.clientX - rect.left);
-      gridWrap.scrollTop  = my * zoom + padY - (e.clientY - rect.top);
+      if (!pendingZoom) {
+        pendingZoom = requestAnimationFrame(() => {
+          pendingZoom = null;
+          applyZoom();
+          const a = zoomAnchor;
+          gridWrap.scrollLeft = a.mx * zoom + a.padX - a.cx;
+          gridWrap.scrollTop  = a.my * zoom + a.padY - a.cy;
+        });
+      }
     }, { passive: false });
 
     zoomSlider.addEventListener('input', () => {
@@ -288,7 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const height = params.height ?? size.height;
       const width  = params.width  ?? size.width;
       a.run(input, width, height);
-      zoom = 1;
       new CA.Renderer(zoomContent, a).render({
         cellSize:      sec.cellSize,
         showRowLabels: true,
@@ -296,18 +303,17 @@ document.addEventListener('DOMContentLoaded', () => {
         trimBlanks:    true,
       });
       measureContent();
-      applyZoom();
-      // Scroll to top-left of actual content (past the padding)
+      // Auto-zoom to fit if content overflows
       const vw = gridWrap.clientWidth;
       const vh = gridWrap.clientHeight;
+      const fitW = naturalW > 0 ? vw / naturalW : 1;
+      const fitH = naturalH > 0 ? vh / naturalH : 1;
+      zoom = Math.min(1, fitW, fitH);
+      applyZoom();
+      // Scroll to top-left of actual content (past the padding)
       gridWrap.scrollLeft = vw / 2;
       gridWrap.scrollTop  = vh / 2;
-      // Enable slider if content overflows
-      if (naturalW > gridWrap.clientWidth || naturalH > 500) {
-        zoomSlider.disabled = false;
-      } else {
-        zoomSlider.disabled = true;
-      }
+      zoomSlider.disabled = zoom >= 1;
       if (sec.postRender) sec.postRender(a, section);
     };
 

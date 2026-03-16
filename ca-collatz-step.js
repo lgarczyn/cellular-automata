@@ -41,12 +41,6 @@ CA.CollatzStep = class CollatzStep extends CA.MulBy3Plus1 {
     // Find the first non-LeastEdge column (the LSB of the actual number)
     let start = 0;
     while (start < this.width && this.get(r, start) === CA.LEAST_EDGE) start++;
-    // Skip trailing zeros above the LeastEdge boundary
-    while (start < this.width) {
-      const cell = this.get(r, start);
-      if (cell === null || cell.digit !== 0) break;
-      start++;
-    }
     let n = 0;
     for (let c = this.width - 1; c >= start; c--) {
       const cell = this.get(r, c);
@@ -68,13 +62,14 @@ CA.CollatzStep = class CollatzStep extends CA.MulBy3Plus1 {
     const sum = (shifted?.digit ?? 0) + (same?.digit ?? 0) + carryIn;
     const digit = sum % 2;
     const carry = sum >= 2 ? 1 : 0;
-    // if (left == CA.LEAST_EDGE && carry + digit == ) {
-    //   return CA.LEAST_EDGE;
-    // }
 
-    if (above?.digit == 0 && left === CA.LEAST_EDGE) return CA.LEAST_EDGE;
-
-    // if (digit === 0 && left === CA.LEAST_EDGE) return CA.LEAST_EDGE;
+    // if (above?.digit == 0 && left === CA.LEAST_EDGE) return CA.LEAST_EDGE;
+    if (left === CA.LEAST_EDGE)
+    {
+      if (digit === 0 && carry == 1) return CA.LEAST_EDGE;
+      // special case when starting with even inputs
+      if (above?.digit === 0 && shifted === CA.LEAST_EDGE) return CA.LEAST_EDGE;
+    }
 
 
     return { digit, carry };
