@@ -20,15 +20,15 @@ CA.DivBy2 = class DivBy2 extends CA.CellularAutomaton {
 
   initGrid(input) {
     const n    = typeof input === 'number' ? input : parseInt(input) || 0;
-    const bits = CA.CellularAutomaton.toBitsMSB(n, this.width);
+    const bits = CA.CellularAutomaton.toBitsLSB(n, this.width);
     for (let c = 0; c < this.width; c++) this.grid[0][c] = bits[c];
   }
 
-  computeCell(r, c) { return this.get(r-1, c-1); }
+  computeCell(r, c) { return this.get(r-1, c+1); }
 
   sourceCells(r, c) {
     if (r === 0) return [];
-    return [{r: r-1, c: c-1}];
+    return [{r: r-1, c: c+1}];
   }
 
   cellStyle(v) {
@@ -39,7 +39,7 @@ CA.DivBy2 = class DivBy2 extends CA.CellularAutomaton {
 
   readRow(r) {
     let n = 0;
-    for (let c = 0; c < this.width; c++) n = n * 2 + this.get(r, c);
+    for (let c = this.width - 1; c >= 0; c--) n = n * 2 + this.get(r, c);
     return n;
   }
 };

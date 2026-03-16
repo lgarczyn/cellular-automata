@@ -139,10 +139,13 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
+.grid-wrap td.row-label { text-align: right; color: var(--text-dim); white-space: nowrap; }
+.grid-wrap td.row-value { text-align: left; color: var(--accent2); white-space: nowrap; }
 .grid-wrap td.source-highlight { outline: 2px solid #58a6ff; outline-offset: -2px; z-index: 2; position: relative; }
 .grid-wrap td.hovered-cell { outline: 2px solid #f0883e; outline-offset: -2px; z-index: 3; position: relative; }
 
 .zoom-far td { font-size: 0; }
+.zoom-far td.row-label, .zoom-far td.row-value { font-size: 0; }
 .zoom-far text { display: none; }
 
 footer { text-align: center; padding: 2rem 1rem; color: var(--text-dim); font-size: 0.8rem; }

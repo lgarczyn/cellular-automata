@@ -122,7 +122,7 @@ CA.SECTIONS = [
   {
     id:       'collatz-hex-rotated',
     factory:  () => new CA.CollatzHexRotated(),
-    defaults: { input: 7 },
+    defaults: { input: 27 },
     showValues: true,
     cellSize:   28,
     controls: [

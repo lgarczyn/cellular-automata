@@ -28,35 +28,69 @@ CA.Renderer = class Renderer {
     for (let r = 0; r < grid.length; r++) {
       const row = grid[r];
       const len = row.length;
-      // Find first and last non-blank column (iterating in display order: high c first)
+      // Find first and last visible column
       let first = len, last = -1;
       for (let c = 0; c < len; c++) {
         const v = row[c];
-        if (v !== null && v !== blank) { if (c < first) first = c; last = c; }
+        if (v === null || v === blank) continue;
+        const cs = a.cellStyle(v, r, c);
+        if (cs.hidden) continue;
+        if (c < first) first = c;
+        last = c;
       }
+      // Every row has len+2 columns: [spacer?] [label:1] [data] [value:1] [spacer?]
       const tr = document.createElement('tr');
       if (first > last) {
-        // Entire row is blank — single spacer
         const sp = document.createElement('td');
-        sp.colSpan = len;
+        sp.colSpan = len + 2;
         tr.appendChild(sp);
       } else {
-        // Leading spacer (high columns, displayed first since loop is reversed)
         const leadBlanks = len - 1 - last;
+        // Left spacer
         if (leadBlanks > 0) {
           const sp = document.createElement('td');
           sp.colSpan = leadBlanks;
           tr.appendChild(sp);
         }
-        // Actual cells
-        for (let c = last; c >= first; c--) {
-          const td = this._makeTD(row[c], a, r, c);
-          td.dataset.row = r;
-          td.dataset.col = c;
-          cellMap.set(`${r},${c}`, td);
-          tr.appendChild(td);
+        // Row label (1 col, adjacent to data)
+        const lbl = document.createElement('td');
+        if (showRowLabels) { lbl.textContent = r; lbl.className = 'row-label'; }
+        tr.appendChild(lbl);
+        // Actual cells — skip hidden cells, merge them into spacers
+        let c = last;
+        while (c >= first) {
+          const v = row[c];
+          const isBlank = v === null || v === blank;
+          const isHidden = !isBlank && a.cellStyle(v, r, c).hidden;
+          if (isBlank || isHidden) {
+            // Count consecutive blank/hidden cells for colspan
+            let span = 1;
+            c--;
+            while (c >= first) {
+              const v2 = row[c];
+              const b2 = v2 === null || v2 === blank;
+              const h2 = !b2 && a.cellStyle(v2, r, c).hidden;
+              if (!b2 && !h2) break;
+              span++;
+              c--;
+            }
+            const sp = document.createElement('td');
+            sp.colSpan = span;
+            tr.appendChild(sp);
+          } else {
+            const td = this._makeTD(v, a, r, c);
+            td.dataset.row = r;
+            td.dataset.col = c;
+            cellMap.set(`${r},${c}`, td);
+            tr.appendChild(td);
+            c--;
+          }
         }
-        // Trailing spacer (low columns)
+        // Row value (1 col, adjacent to data)
+        const val = document.createElement('td');
+        if (showValues) { val.textContent = a.readRow(r); val.className = 'row-value'; }
+        tr.appendChild(val);
+        // Right spacer
         if (first > 0) {
           const sp = document.createElement('td');
           sp.colSpan = first;
@@ -142,10 +176,12 @@ CA.Renderer = class Renderer {
     const numRows = grid.length;
     const numCols = grid[0]?.length ?? 0;
 
-    const padX   = hexW / 2 + 8;
+    const labelPad = showRowLabels ? 30 : 0;
+    const valuePad = showValues ? 60 : 0;
+    const padX   = hexW / 2 + 8 + labelPad;
     const padY   = R + 2;
 
-    const svgW = padX + (numCols - 1) * hexW + (numRows - 1) * hexW / 2 + hexW / 2 + 8;
+    const svgW = padX + (numCols - 1) * hexW + (numRows - 1) * hexW / 2 + hexW / 2 + 8 + valuePad;
     const svgH = padY + (numRows - 1) * 1.5 * R + R + 4;
 
     const NS  = 'http://www.w3.org/2000/svg';
@@ -167,6 +203,7 @@ CA.Renderer = class Renderer {
       g.setAttribute('class', 'hex-row');
 
       const cy = padY + r * 1.5 * R;
+      let minCx = Infinity, maxCx = -Infinity;
 
       for (let c = grid[r].length - 1; c >= 0; c--) {
         const dc = grid[r].length - 1 - c;
@@ -176,6 +213,9 @@ CA.Renderer = class Renderer {
         if (cell === null || cell === a.blankState) continue;
         const cs    = a.cellStyle(cell, r, c);
         if (cs.hidden) continue;
+
+        if (cx < minCx) minCx = cx;
+        if (cx > maxCx) maxCx = cx;
 
         const poly = document.createElementNS(NS, 'polygon');
         poly.setAttribute('points', this._hexPoints(cx, cy, drawR));
@@ -199,6 +239,34 @@ CA.Renderer = class Renderer {
           txt.textContent = cs.text;
           g.appendChild(txt);
         }
+      }
+
+      // Row label — LEFT of leftmost data cell
+      if (showRowLabels && minCx < Infinity) {
+        const lbl = document.createElementNS(NS, 'text');
+        lbl.setAttribute('x', minCx - R - 4);
+        lbl.setAttribute('y', cy + fontSize * 0.35);
+        lbl.setAttribute('text-anchor', 'end');
+        lbl.setAttribute('fill', '#8b949e');
+        lbl.setAttribute('font-size', fontSize);
+        lbl.setAttribute('font-family', "'SF Mono','Cascadia Code','Consolas',monospace");
+        lbl.setAttribute('pointer-events', 'none');
+        lbl.textContent = r;
+        g.appendChild(lbl);
+      }
+
+      // Row value — RIGHT of rightmost data cell
+      if (showValues && maxCx > -Infinity) {
+        const val = document.createElementNS(NS, 'text');
+        val.setAttribute('x', maxCx + R + 4);
+        val.setAttribute('y', cy + fontSize * 0.35);
+        val.setAttribute('text-anchor', 'start');
+        val.setAttribute('fill', '#3fb950');
+        val.setAttribute('font-size', fontSize);
+        val.setAttribute('font-family', "'SF Mono','Cascadia Code','Consolas',monospace");
+        val.setAttribute('pointer-events', 'none');
+        val.textContent = a.readRow(r);
+        g.appendChild(val);
       }
 
       svg.appendChild(g);
@@ -233,11 +301,13 @@ CA.Renderer = class Renderer {
     const numRows = grid.length;
     const numCols = grid[0]?.length ?? 0;
 
-    const padX   = R + 8;
+    const labelPad = showRowLabels ? 30 : 0;
+    const valuePad = showValues ? 60 : 0;
+    const padX   = R + 8 + labelPad;
     const padY   = hexH / 2 + 8;
 
     const maxSlide = Math.max(0, numCols - 1);
-    const svgW = padX + (numCols - 1) * colStep + (numRows - 1) * colStep + R + 8;
+    const svgW = padX + (numCols - 1) * colStep + (numRows - 1) * colStep + R + 8 + valuePad;
     const svgH = padY + (numRows - 1) * rowStep + maxSlide * rowStep + hexH / 2 + 4;
 
     const NS  = 'http://www.w3.org/2000/svg';
@@ -258,6 +328,7 @@ CA.Renderer = class Renderer {
       const g = document.createElementNS(NS, 'g');
       g.setAttribute('class', 'hex-row');
 
+      let minCx = Infinity, minCy = 0, maxCx = -Infinity, maxCy = 0;
       for (let c = grid[r].length - 1; c >= 0; c--) {
         const cell = grid[r][c];
         if (cell === null || cell === a.blankState) continue;
@@ -267,6 +338,9 @@ CA.Renderer = class Renderer {
         const dc = grid[r].length - 1 - c;
         const cx = padX + dc * colStep + r * colStep;
         const cy = padY + (r + (numCols - 1 - dc)) * rowStep;
+
+        if (cx < minCx) { minCx = cx; minCy = cy; }
+        if (cx > maxCx) { maxCx = cx; maxCy = cy; }
 
         const poly = document.createElementNS(NS, 'polygon');
         poly.setAttribute('points', this._hexPointsFlat(cx, cy, drawR));
@@ -290,6 +364,34 @@ CA.Renderer = class Renderer {
           txt.textContent = cs.text;
           g.appendChild(txt);
         }
+      }
+
+      // Row label — LEFT of leftmost data cell
+      if (showRowLabels && minCx < Infinity) {
+        const lbl = document.createElementNS(NS, 'text');
+        lbl.setAttribute('x', minCx - R - 4);
+        lbl.setAttribute('y', minCy + fontSize * 0.35);
+        lbl.setAttribute('text-anchor', 'end');
+        lbl.setAttribute('fill', '#8b949e');
+        lbl.setAttribute('font-size', fontSize);
+        lbl.setAttribute('font-family', "'SF Mono','Cascadia Code','Consolas',monospace");
+        lbl.setAttribute('pointer-events', 'none');
+        lbl.textContent = r;
+        g.appendChild(lbl);
+      }
+
+      // Row value — RIGHT of rightmost data cell
+      if (showValues && maxCx > -Infinity) {
+        const val = document.createElementNS(NS, 'text');
+        val.setAttribute('x', maxCx + R + 4);
+        val.setAttribute('y', maxCy + fontSize * 0.35);
+        val.setAttribute('text-anchor', 'start');
+        val.setAttribute('fill', '#3fb950');
+        val.setAttribute('font-size', fontSize);
+        val.setAttribute('font-family', "'SF Mono','Cascadia Code','Consolas',monospace");
+        val.setAttribute('pointer-events', 'none');
+        val.textContent = a.readRow(r);
+        g.appendChild(val);
       }
 
       svg.appendChild(g);
