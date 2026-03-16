@@ -55,6 +55,7 @@ section.ca-section {
   margin: 0 auto;
   padding: 2.5rem 1rem 3rem;
   border-bottom: 1px solid var(--border);
+  overflow: hidden;
 }
 section.ca-section h2   { font-size: 1.6rem; margin-bottom: 0.5rem; }
 section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-width: 720px; }
@@ -93,11 +94,25 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
 .controls button:hover { opacity: 0.85; }
 
 .grid-wrap {
-  overflow-x: auto;
+  overflow: auto;
+  height: 500px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
+  width: 100%;
 }
+.zoom-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 80px;
+  opacity: 0.15;
+  transition: opacity 0.2s;
+  z-index: 10;
+  cursor: pointer;
+}
+.zoom-slider:hover, .zoom-slider:active { opacity: 0.8; }
+.zoom-slider:disabled { opacity: 0; pointer-events: none; }
 .grid-wrap table { border-collapse: separate; border-spacing: 2px; }
 .grid-wrap td {
   width: var(--cell-size);
@@ -107,35 +122,22 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
   vertical-align: middle;
   font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
   font-size: 0.7rem;
-  border: 1px solid #21262d;
+  border: none;
 }
-.grid-wrap td.row-label {
-  background: var(--bg);
-  color: var(--text-dim);
-  font-size: 0.65rem;
-  width: 36px;
-  min-width: 36px;
-  border-right: 2px solid var(--border);
-  position: sticky;
-  left: 0;
-  z-index: 1;
+.ca-tooltip {
+  position: fixed;
+  z-index: 1000;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.75rem;
+  color: var(--text);
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
-.grid-wrap td.row-value {
-  background: var(--bg);
-  color: var(--accent2);
-  font-size: 0.7rem;
-  width: 60px;
-  min-width: 60px;
-  border-left: 2px solid var(--border);
-  position: sticky;
-  right: 0;
-  z-index: 1;
-  text-align: right;
-  padding-right: 6px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.grid-wrap tr:hover td.row-value { opacity: 1; }
 .grid-wrap td.source-highlight { outline: 2px solid #58a6ff; outline-offset: -2px; z-index: 2; position: relative; }
 .grid-wrap td.hovered-cell { outline: 2px solid #f0883e; outline-offset: -2px; z-index: 3; position: relative; }
 

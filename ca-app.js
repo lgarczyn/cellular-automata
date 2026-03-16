@@ -25,21 +25,23 @@ CA.SECTIONS = [
   {
     id:       'mul3',
     factory:  () => new CA.MulBy3(),
-    defaults: { input: 42 },
+    defaults: { input: 42, height: 10 },
     showValues: true,
     cellSize:   32,
     controls: [
       { label: 'Number', key: 'input', type: 'number', min: 0, max: 65535 },
+      { label: 'Rows',   key: 'height', type: 'number', min: 1, max: 200 },
     ],
   },
   {
     id:       'mul3plus1',
     factory:  () => new CA.MulBy3Plus1(),
-    defaults: { input: 1 },
+    defaults: { input: 1, height: 10 },
     showValues: true,
     cellSize:   32,
     controls: [
       { label: 'Number', key: 'input', type: 'number', min: 0, max: 65535 },
+      { label: 'Rows',   key: 'height', type: 'number', min: 1, max: 200 },
     ],
   },
   {
@@ -133,6 +135,16 @@ CA.SECTIONS = [
       { label: 'Number', key: 'input', type: 'number', min: 1, max: 65535 },
     ],
   },
+  {
+    id:       'collatz-hex-rotated',
+    factory:  () => new CA.CollatzHexRotated(),
+    defaults: { input: 7 },
+    showValues: true,
+    cellSize:   28,
+    controls: [
+      { label: 'Number', key: 'input', type: 'number', min: 1, max: 65535 },
+    ],
+  },
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -177,10 +189,91 @@ document.addEventListener('DOMContentLoaded', () => {
     controls.appendChild(btn);
     section.appendChild(controls);
 
+    // gridWrap is the fixed-size scroll viewport (never changes size)
     const gridWrap = document.createElement('div');
     gridWrap.className = 'grid-wrap';
-    section.appendChild(gridWrap);
+
+    // zoomSizer takes up space matching the scaled content, driving scrollbars
+    const zoomSizer = document.createElement('div');
+    // zoomContent holds the actual rendered content, scaled via transform
+    const zoomContent = document.createElement('div');
+    zoomContent.style.transformOrigin = 'top left';
+    zoomContent.style.position = 'absolute';
+    zoomContent.style.top = '0';
+    zoomContent.style.left = '0';
+    zoomSizer.style.position = 'relative';
+    zoomSizer.appendChild(zoomContent);
+    gridWrap.appendChild(zoomSizer);
+
+    // Zoom slider — fixed in the viewport corner, not inside scrollable area
+    const zoomSlider = document.createElement('input');
+    zoomSlider.type = 'range';
+    zoomSlider.min = '5';
+    zoomSlider.max = '100';
+    zoomSlider.value = '100';
+    zoomSlider.className = 'zoom-slider';
+    zoomSlider.disabled = true;
+
+    const zoomWrap = document.createElement('div');
+    zoomWrap.style.position = 'relative';
+    zoomWrap.appendChild(gridWrap);
+    zoomWrap.appendChild(zoomSlider);
+    section.appendChild(zoomWrap);
     main.appendChild(section);
+
+    let zoom = 1;
+    let naturalW = 0, naturalH = 0;
+
+    const applyZoom = () => {
+      const vw = gridWrap.clientWidth;
+      const vh = gridWrap.clientHeight;
+      const padX = vw / 2;
+      const padY = vh / 2;
+      zoomContent.style.transform = `scale(${zoom})`;
+      zoomContent.style.left = padX + 'px';
+      zoomContent.style.top  = padY + 'px';
+      zoomSizer.style.width  = (naturalW * zoom + padX * 2) + 'px';
+      zoomSizer.style.height = (naturalH * zoom + padY * 2) + 'px';
+      zoomSlider.value = String(Math.round(zoom * 100));
+    };
+
+    const measureContent = () => {
+      const el = zoomContent.firstElementChild;
+      if (!el) return;
+      // Measure at scale 1
+      zoomContent.style.transform = 'none';
+      naturalW = el.scrollWidth || el.offsetWidth;
+      naturalH = el.scrollHeight || el.offsetHeight;
+    };
+
+    gridWrap.addEventListener('wheel', e => {
+      if (!e.altKey) return;
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+      const newZoom = Math.min(1, Math.max(0.05, zoom * factor));
+
+      const rect = gridWrap.getBoundingClientRect();
+      const vw = gridWrap.clientWidth;
+      const vh = gridWrap.clientHeight;
+      const padX = vw / 2;
+      const padY = vh / 2;
+      // Mouse position in content-space before zoom
+      const mx = (e.clientX - rect.left + gridWrap.scrollLeft - padX) / zoom;
+      const my = (e.clientY - rect.top  + gridWrap.scrollTop  - padY) / zoom;
+
+      zoom = newZoom;
+      zoomSlider.disabled = false;
+      applyZoom();
+
+      // Adjust scroll so the content point under the mouse stays put
+      gridWrap.scrollLeft = mx * zoom + padX - (e.clientX - rect.left);
+      gridWrap.scrollTop  = my * zoom + padY - (e.clientY - rect.top);
+    }, { passive: false });
+
+    zoomSlider.addEventListener('input', () => {
+      zoom = parseInt(zoomSlider.value) / 100;
+      applyZoom();
+    });
 
     const runSection = () => {
       const params = Object.fromEntries(
@@ -190,18 +283,31 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       );
       const a    = sec.factory();
-      const size = a.suggestSize(params.input ?? sec.defaults.input);
-      a.run(
-        params.input  ?? sec.defaults.input,
-        params.width  ?? size.width,
-        params.height ?? size.height,
-      );
-      new CA.Renderer(gridWrap, a).render({
+      const input  = params.input  ?? sec.defaults.input;
+      const size   = a.suggestSize(input, params.height);
+      const height = params.height ?? size.height;
+      const width  = params.width  ?? size.width;
+      a.run(input, width, height);
+      zoom = 1;
+      new CA.Renderer(zoomContent, a).render({
         cellSize:      sec.cellSize,
         showRowLabels: true,
         showValues:    sec.showValues,
         trimBlanks:    true,
       });
+      measureContent();
+      applyZoom();
+      // Scroll to top-left of actual content (past the padding)
+      const vw = gridWrap.clientWidth;
+      const vh = gridWrap.clientHeight;
+      gridWrap.scrollLeft = vw / 2;
+      gridWrap.scrollTop  = vh / 2;
+      // Enable slider if content overflows
+      if (naturalW > gridWrap.clientWidth || naturalH > 500) {
+        zoomSlider.disabled = false;
+      } else {
+        zoomSlider.disabled = true;
+      }
       if (sec.postRender) sec.postRender(a, section);
     };
 

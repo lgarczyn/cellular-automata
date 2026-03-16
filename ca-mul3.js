@@ -28,9 +28,9 @@ CA.MulBy3 = class MulBy3 extends CA.CellularAutomaton {
     });
   }
 
-  suggestSize(input) {
+  suggestSize(input, height) {
     const b = CA.CellularAutomaton.bitLength(input);
-    const h = b + 4;
+    const h = height ?? (b + 4);
     return { width: b + 2 * h + 2, height: h };
   }
 
@@ -62,12 +62,11 @@ CA.MulBy3 = class MulBy3 extends CA.CellularAutomaton {
   }
 
   cellStyle(cell) {
-    if (cell === null) return { text: '', colors: ['#0d1117'], fg: '#222', carry: false };
+    if (cell === null) return { text: '', colors: ['#0d1117'], fg: '#222' };
     return {
-      text:   String(cell.digit),
+      text:   cell.carry > 0 ? cell.digit + '+' : String(cell.digit),
       colors: [cell.digit ? '#7c3aed' : '#1a1e24'],
       fg:     cell.digit ? '#fff' : '#444',
-      carry:  cell.carry > 0,
     };
   }
 

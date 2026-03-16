@@ -28,7 +28,8 @@ CA.CollatzStep = class CollatzStep extends CA.MulBy3Plus1 {
     for (let r = this.seedRows; r < this.height; r++) {
       this.computeRow(r);
       lastRow = r;
-      if (this.readRow(r) === 1) break;
+      const val = this.readRow(r);
+      if (val === 1 || val === 0) break;
     }
     // Trim unused rows
     this.grid.length = lastRow + 1;
@@ -67,8 +68,14 @@ CA.CollatzStep = class CollatzStep extends CA.MulBy3Plus1 {
     const sum = (shifted?.digit ?? 0) + (same?.digit ?? 0) + carryIn;
     const digit = sum % 2;
     const carry = sum >= 2 ? 1 : 0;
+    // if (left == CA.LEAST_EDGE && carry + digit == ) {
+    //   return CA.LEAST_EDGE;
+    // }
 
     if (above?.digit == 0 && left === CA.LEAST_EDGE) return CA.LEAST_EDGE;
+
+    // if (digit === 0 && left === CA.LEAST_EDGE) return CA.LEAST_EDGE;
+
 
     return { digit, carry };
   }

@@ -14,8 +14,8 @@ CA.MulBy3Plus1 = class MulBy3Plus1 extends CA.MulBy3 {
     + 'which adds 1 at every step. The rightmost column shows the injected +1 carry.';
   }
 
-  suggestSize(input) {
-    const size = super.suggestSize(input);
+  suggestSize(input, height) {
+    const size = super.suggestSize(input, height);
     return { width: size.width + 1, height: size.height };
   }
 
@@ -48,7 +48,7 @@ CA.MulBy3Plus1 = class MulBy3Plus1 extends CA.MulBy3 {
       if (right === CA.LEAST_EDGE) {
         return { text: '', colors: ['#0d1117'], fg: '#333', hidden: true };
       }
-      return { text: '0', colors: ['#1b2a1b'], fg: '#3fb950', carry: true };
+      return { text: '0+', colors: ['#1b2a1b'], fg: '#3fb950' };
     }
     return super.cellStyle(cell, r, c);
   }

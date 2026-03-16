@@ -9,7 +9,8 @@ CA.Renderer = class Renderer {
 
   render(opts = {}) {
     const mode = this.automaton.displayMode;
-    if (mode === 'hexgrid')         this._renderHexGrid(opts);
+    if (mode === 'hexgrid-rotated') this._renderHexGridRotated(opts);
+    else if (mode === 'hexgrid')    this._renderHexGrid(opts);
     else if (mode === 'hex')        this._renderHex(opts);
     else                            this._renderGrid(opts);
   }
@@ -25,7 +26,6 @@ CA.Renderer = class Renderer {
     const tbl = document.createElement('table');
     for (let r = 0; r < grid.length; r++) {
       const tr = document.createElement('tr');
-      if (showRowLabels) tr.appendChild(this._labelTD(r));
       for (let c = grid[r].length - 1; c >= 0; c--) {
         const td = this._makeTD(grid[r][c], a, r, c);
         td.dataset.row = r;
@@ -33,11 +33,14 @@ CA.Renderer = class Renderer {
         cellMap.set(`${r},${c}`, td);
         tr.appendChild(td);
       }
-      if (showValues) tr.appendChild(this._valueTD(a.readRow(r)));
       tbl.appendChild(tr);
     }
 
     this._attachGridHover(tbl, cellMap, a);
+    this._attachTooltip(tbl, '[data-row]', el => {
+      const r = parseInt(el.dataset.row);
+      return this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
+    });
 
     this.container.innerHTML = '';
     this.container.appendChild(tbl);
@@ -55,7 +58,7 @@ CA.Renderer = class Renderer {
     const tbl = document.createElement('table');
     for (let r = 0; r < grid.length; r++) {
       const tr = document.createElement('tr');
-      if (showRowLabels) tr.appendChild(this._labelTD(r));
+      tr.dataset.row = r;
 
       const nibbleTDs = [];
       for (let i = 0; i < grid[r].length; i += gsz) {
@@ -83,9 +86,13 @@ CA.Renderer = class Renderer {
       }
       for (let i = nibbleTDs.length - 1; i >= 0; i--) tr.appendChild(nibbleTDs[i]);
 
-      if (showValues) tr.appendChild(this._valueTD(a.readRow(r)));
       tbl.appendChild(tr);
     }
+
+    this._attachTooltip(tbl, 'tr[data-row]', el => {
+      const r = parseInt(el.dataset.row);
+      return this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
+    });
 
     this.container.innerHTML = '';
     this.container.appendChild(tbl);
@@ -105,11 +112,10 @@ CA.Renderer = class Renderer {
     const numRows = grid.length;
     const numCols = grid[0]?.length ?? 0;
 
-    const valueW = showValues ? 80 : 0;
     const padX   = hexW / 2 + 8;
-    const padY   = R + (showRowLabels ? 16 : 2);
+    const padY   = R + 2;
 
-    const svgW = padX + (numCols - 1) * hexW + (numRows - 1) * hexW / 2 + hexW / 2 + valueW + 8;
+    const svgW = padX + (numCols - 1) * hexW + (numRows - 1) * hexW / 2 + hexW / 2 + 8;
     const svgH = padY + (numRows - 1) * 1.5 * R + R + 4;
 
     const NS  = 'http://www.w3.org/2000/svg';
@@ -118,15 +124,11 @@ CA.Renderer = class Renderer {
     svg.setAttribute('height', svgH);
     svg.style.display = 'block';
 
-    // Inject hover style for row values
     const style = document.createElementNS(NS, 'style');
-    style.textContent = '.hex-row .row-val { opacity: 0; transition: opacity 0.15s; }'
-                      + '.hex-row:hover .row-val { opacity: 1; }'
-                      + '.hex-row:hover polygon { filter: brightness(1.2); }';
+    style.textContent = '.hex-row:hover polygon { filter: brightness(1.2); }';
     svg.appendChild(style);
 
     const fontSize = Math.max(7, R * 0.7);
-    const carryStroke   = '#f0883e';
     const defaultStroke = '#21262d';
     const polyMap = new Map();
 
@@ -134,7 +136,6 @@ CA.Renderer = class Renderer {
       const g = document.createElementNS(NS, 'g');
       g.setAttribute('class', 'hex-row');
 
-      let firstCellX = null;
       const cy = padY + r * 1.5 * R;
 
       for (let c = grid[r].length - 1; c >= 0; c--) {
@@ -145,21 +146,17 @@ CA.Renderer = class Renderer {
         if (cell === null || cell === a.blankState) continue;
         const cs    = a.cellStyle(cell, r, c);
         if (cs.hidden) continue;
-        if (firstCellX === null) firstCellX = cx;
-        const carry = cs.carry || false;
 
-        // Hexagon
         const poly = document.createElementNS(NS, 'polygon');
         poly.setAttribute('points', this._hexPoints(cx, cy, drawR));
         poly.setAttribute('fill', cs.colors[0]);
-        poly.setAttribute('stroke', carry ? carryStroke : defaultStroke);
-        poly.setAttribute('stroke-width', carry ? '2.5' : '1');
+        poly.setAttribute('stroke', defaultStroke);
+        poly.setAttribute('stroke-width', '1');
         poly.dataset.row = r;
         poly.dataset.col = c;
         polyMap.set(`${r},${c}`, poly);
         g.appendChild(poly);
 
-        // Cell text
         if (cs.text) {
           const txt = document.createElementNS(NS, 'text');
           txt.setAttribute('x', cx);
@@ -174,34 +171,93 @@ CA.Renderer = class Renderer {
         }
       }
 
-      // Row label next to first visible cell
-      if (showRowLabels && firstCellX !== null) {
-        const txt = document.createElementNS(NS, 'text');
-        txt.setAttribute('x', firstCellX - hexW / 2 - 4);
-        txt.setAttribute('y', cy + 4);
-        txt.setAttribute('text-anchor', 'end');
-        txt.setAttribute('fill', '#8b949e');
-        txt.setAttribute('font-size', '9');
-        txt.setAttribute('font-family', 'sans-serif');
-        txt.textContent = r;
-        g.appendChild(txt);
-      }
+      svg.appendChild(g);
+    }
 
-      // Row value (hidden until hover)
-      if (showValues) {
-        const n = a.readRow(r);
-        if (n !== null) {
-          const lastC = Math.max(0, grid[r].length - 1);
-          const valX = padX + lastC * hexW + r * hexW / 2 + hexW / 2 + 10;
-          const valY = cy + 4;
-          const txt  = document.createElementNS(NS, 'text');
-          txt.setAttribute('x', valX);
-          txt.setAttribute('y', valY);
-          txt.setAttribute('class', 'row-val');
-          txt.setAttribute('fill', '#3fb950');
-          txt.setAttribute('font-size', '11');
+    this._attachHexHover(svg, polyMap, a, NS);
+    this._attachTooltip(svg, 'polygon[data-row]', el => {
+      const r = parseInt(el.dataset.row);
+      return this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
+    });
+
+    this.container.innerHTML = '';
+    this.container.appendChild(svg);
+  }
+
+  // ── Rotated hex grid ────────────────────────────────────────────
+  // Columns slide one cell up relative to left neighbor; flat-top hexagons;
+  // rows offset half a cell right.
+
+  _renderHexGridRotated({ cellSize = 24, showRowLabels = true, showValues = false, trimBlanks = true } = {}) {
+    const a    = this.automaton;
+    const grid = trimBlanks ? a.trimmedGrid() : a.grid;
+
+    const R       = cellSize / 2;
+    const drawR   = R - 2;
+    const sqrt3   = Math.sqrt(3);
+    // Flat-top hex: width = 2R, height = sqrt3 * R
+    const hexH    = sqrt3 * R;
+    const colStep = 1.5 * R;            // horizontal distance between columns
+    const rowStep = hexH / 2;           // vertical offset per row (half hex height)
+
+    const numRows = grid.length;
+    const numCols = grid[0]?.length ?? 0;
+
+    const padX   = R + 8;
+    const padY   = hexH / 2 + 8;
+
+    const maxSlide = Math.max(0, numCols - 1);
+    const svgW = padX + (numCols - 1) * colStep + (numRows - 1) * colStep + R + 8;
+    const svgH = padY + (numRows - 1) * rowStep + maxSlide * rowStep + hexH / 2 + 4;
+
+    const NS  = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('width', svgW);
+    svg.setAttribute('height', svgH);
+    svg.style.display = 'block';
+
+    const style = document.createElementNS(NS, 'style');
+    style.textContent = '.hex-row:hover polygon { filter: brightness(1.2); }';
+    svg.appendChild(style);
+
+    const fontSize = Math.max(7, R * 0.7);
+    const defaultStroke = '#21262d';
+    const polyMap = new Map();
+
+    for (let r = 0; r < numRows; r++) {
+      const g = document.createElementNS(NS, 'g');
+      g.setAttribute('class', 'hex-row');
+
+      for (let c = grid[r].length - 1; c >= 0; c--) {
+        const cell = grid[r][c];
+        if (cell === null || cell === a.blankState) continue;
+        const cs = a.cellStyle(cell, r, c);
+        if (cs.hidden) continue;
+
+        const dc = grid[r].length - 1 - c;
+        const cx = padX + dc * colStep + r * colStep;
+        const cy = padY + (r + (numCols - 1 - dc)) * rowStep;
+
+        const poly = document.createElementNS(NS, 'polygon');
+        poly.setAttribute('points', this._hexPointsFlat(cx, cy, drawR));
+        poly.setAttribute('fill', cs.colors[0]);
+        poly.setAttribute('stroke', defaultStroke);
+        poly.setAttribute('stroke-width', '1');
+        poly.dataset.row = r;
+        poly.dataset.col = c;
+        polyMap.set(`${r},${c}`, poly);
+        g.appendChild(poly);
+
+        if (cs.text) {
+          const txt = document.createElementNS(NS, 'text');
+          txt.setAttribute('x', cx);
+          txt.setAttribute('y', cy + fontSize * 0.35);
+          txt.setAttribute('text-anchor', 'middle');
+          txt.setAttribute('fill', cs.fg || '#ccc');
+          txt.setAttribute('font-size', fontSize);
           txt.setAttribute('font-family', "'SF Mono','Cascadia Code','Consolas',monospace");
-          txt.textContent = n;
+          txt.setAttribute('pointer-events', 'none');
+          txt.textContent = cs.text;
           g.appendChild(txt);
         }
       }
@@ -210,16 +266,30 @@ CA.Renderer = class Renderer {
     }
 
     this._attachHexHover(svg, polyMap, a, NS);
+    this._attachTooltip(svg, 'polygon[data-row]', el => {
+      const r = parseInt(el.dataset.row);
+      return this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
+    });
 
     this.container.innerHTML = '';
     this.container.appendChild(svg);
   }
 
-  // Flat-top hexagon vertex string for SVG polygon
+  // Pointy-top hexagon vertex string for SVG polygon
   _hexPoints(cx, cy, R) {
     const pts = [];
     for (let i = 0; i < 6; i++) {
       const angle = Math.PI / 6 + Math.PI / 3 * i;  // pointy-top: start at 30°
+      pts.push(`${(cx + R * Math.cos(angle)).toFixed(1)},${(cy + R * Math.sin(angle)).toFixed(1)}`);
+    }
+    return pts.join(' ');
+  }
+
+  // Flat-top hexagon vertex string for SVG polygon
+  _hexPointsFlat(cx, cy, R) {
+    const pts = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = Math.PI / 3 * i;  // flat-top: start at 0°
       pts.push(`${(cx + R * Math.cos(angle)).toFixed(1)},${(cy + R * Math.sin(angle)).toFixed(1)}`);
     }
     return pts.join(' ');
@@ -292,18 +362,42 @@ CA.Renderer = class Renderer {
 
   // ── Shared helpers ──────────────────────────────────────────────
 
-  _labelTD(r) {
-    const td = document.createElement('td');
-    td.className = 'row-label';
-    td.textContent = r;
-    return td;
+  _tooltipText(row, showRow, value) {
+    const parts = [];
+    if (showRow) parts.push(`row ${row}`);
+    if (value !== null && value !== undefined) parts.push(`= ${value}`);
+    return parts.join('  ');
   }
 
-  _valueTD(n) {
-    const td = document.createElement('td');
-    td.className = 'row-value';
-    td.textContent = n !== null ? n : '';
-    return td;
+  _attachTooltip(root, selector, textFn) {
+    let tip = null;
+    const show = (e) => {
+      const el = e.target.closest(selector);
+      if (!el) { hide(); return; }
+      const text = textFn(el);
+      if (!text) { hide(); return; }
+      if (!tip) {
+        tip = document.createElement('div');
+        tip.className = 'ca-tooltip';
+        document.body.appendChild(tip);
+      }
+      tip.textContent = text;
+      tip.style.left = (e.clientX + 12) + 'px';
+      tip.style.top  = (e.clientY - 8) + 'px';
+      tip.style.display = '';
+    };
+    const hide = () => {
+      if (tip) tip.style.display = 'none';
+    };
+    const move = (e) => {
+      if (tip && tip.style.display !== 'none') {
+        tip.style.left = (e.clientX + 12) + 'px';
+        tip.style.top  = (e.clientY - 8) + 'px';
+      }
+      show(e);
+    };
+    root.addEventListener('mousemove', move);
+    root.addEventListener('mouseleave', hide);
   }
 
   _makeTD(value, automaton, r, c) {
@@ -323,7 +417,6 @@ CA.Renderer = class Renderer {
     }
 
     td.style.color = style.fg || this._autoFG(colors[0]);
-    if (style.carry) td.style.boxShadow = 'inset 0 0 0 2px #f0883e';
     td.textContent = style.text;
     return td;
   }
