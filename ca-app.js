@@ -191,24 +191,17 @@ document.addEventListener('DOMContentLoaded', () => {
     controls.appendChild(btn);
     section.appendChild(controls);
 
-    // gridWrap is the fixed-size scroll viewport (never changes size)
+    // gridWrap is the fixed-size viewport — overflow hidden, no scrollbars
     const gridWrap = document.createElement('div');
     gridWrap.className = 'grid-wrap';
 
-    // zoomSizer takes up space matching the scaled content, driving scrollbars
-    const zoomSizer = document.createElement('div');
-    // zoomContent holds the actual rendered content, scaled via transform
+    // zoomContent holds the rendered content, positioned via translate + scale
     const zoomContent = document.createElement('div');
-    zoomContent.style.transformOrigin = 'top left';
+    zoomContent.style.transformOrigin = '0 0';
     zoomContent.style.willChange = 'transform';
-    zoomContent.style.position = 'absolute';
-    zoomContent.style.top = '0';
-    zoomContent.style.left = '0';
-    zoomSizer.style.position = 'relative';
-    zoomSizer.appendChild(zoomContent);
-    gridWrap.appendChild(zoomSizer);
+    gridWrap.appendChild(zoomContent);
 
-    // Zoom slider — fixed in the viewport corner, not inside scrollable area
+    // Zoom slider
     const zoomSlider = document.createElement('input');
     zoomSlider.type = 'range';
     zoomSlider.min = '5';
@@ -225,31 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
     main.appendChild(section);
 
     let zoom = 1;
+    let panX = 0, panY = 0;       // content-space offset (pixels at scale=1)
     let naturalW = 0, naturalH = 0;
 
-    // Cached viewport dimensions — updated on resize/run, never in wheel handler
-    let cachedVW = 0, cachedVH = 0, cachedRect = null;
-    const updateCache = () => {
-      cachedVW = gridWrap.clientWidth;
-      cachedVH = gridWrap.clientHeight;
-      cachedRect = gridWrap.getBoundingClientRect();
-    };
-    new ResizeObserver(updateCache).observe(gridWrap);
-
-    // Layout-only update: resizes sizer to match zoom (triggers reflow)
-    const applyLayout = () => {
-      const padX = cachedVW / 2;
-      const padY = cachedVH / 2;
-      zoomContent.style.left = padX + 'px';
-      zoomContent.style.top  = padY + 'px';
-      zoomSizer.style.width  = (naturalW * zoom + padX * 2) + 'px';
-      zoomSizer.style.height = (naturalH * zoom + padY * 2) + 'px';
-      updateCache();
-    };
-
-    // Fast update: only transform + slider (no reflow)
     const applyTransform = () => {
-      zoomContent.style.transform = `scale(${zoom})`;
+      zoomContent.style.transform = `translate(${panX}px,${panY}px) scale(${zoom})`;
       zoomSlider.value = String(Math.round(zoom * 100));
       zoomContent.classList.toggle('zoom-far', zoom < 0.4);
     };
@@ -262,52 +235,58 @@ document.addEventListener('DOMContentLoaded', () => {
       naturalH = el.scrollHeight || el.offsetHeight;
     };
 
-    // Track scroll position without forcing reflow
-    let cachedScrollX = 0, cachedScrollY = 0;
-    gridWrap.addEventListener('scroll', () => {
-      cachedScrollX = gridWrap.scrollLeft;
-      cachedScrollY = gridWrap.scrollTop;
-    }, { passive: true });
-
+    // ── Wheel zoom (around cursor) ──
     let pendingZoom = null;
-    let zoomAnchor = null;
     gridWrap.addEventListener('wheel', e => {
-      if (!e.altKey) return;
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
-
-      // Use cached values — no layout reads here
-      const padX = cachedVW / 2;
-      const padY = cachedVH / 2;
-      const mx = (e.clientX - cachedRect.left + cachedScrollX - padX) / zoom;
-      const my = (e.clientY - cachedRect.top  + cachedScrollY - padY) / zoom;
-
-      zoom = Math.min(1, Math.max(0.05, zoom * factor));
+      const rect = gridWrap.getBoundingClientRect();
+      // Mouse position in content-space
+      const mx = (e.clientX - rect.left - panX) / zoom;
+      const my = (e.clientY - rect.top  - panY) / zoom;
+      const newZoom = Math.max(0.02, zoom * factor);
+      // Adjust pan so point under cursor stays fixed
+      panX = (e.clientX - rect.left) - mx * newZoom;
+      panY = (e.clientY - rect.top)  - my * newZoom;
+      zoom = newZoom;
       zoomSlider.disabled = false;
-      zoomAnchor = { mx, my, cx: e.clientX - cachedRect.left, cy: e.clientY - cachedRect.top, padX, padY };
-
       if (!pendingZoom) {
         pendingZoom = requestAnimationFrame(() => {
           pendingZoom = null;
-          const a = zoomAnchor;
-          // All reads first (from cache — no layout reads)
-          const sx = a.mx * zoom + a.padX - a.cx;
-          const sy = a.my * zoom + a.padY - a.cy;
-          // All writes batched together (no reads after)
           applyTransform();
-          zoomSizer.style.width  = (naturalW * zoom + a.padX * 2) + 'px';
-          zoomSizer.style.height = (naturalH * zoom + a.padY * 2) + 'px';
-          gridWrap.scrollTo(sx, sy);
-          cachedScrollX = sx;
-          cachedScrollY = sy;
         });
       }
     }, { passive: false });
 
-    zoomSlider.addEventListener('input', () => {
-      zoom = parseInt(zoomSlider.value) / 100;
+    // ── Drag to pan ──
+    let dragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
+    gridWrap.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      dragging = true;
+      dragStartX = e.clientX; dragStartY = e.clientY;
+      panStartX = panX; panStartY = panY;
+      gridWrap.setPointerCapture(e.pointerId);
+      gridWrap.style.cursor = 'grabbing';
+    });
+    gridWrap.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      panX = panStartX + (e.clientX - dragStartX);
+      panY = panStartY + (e.clientY - dragStartY);
       applyTransform();
-      applyLayout();
+    });
+    const stopDrag = () => { dragging = false; gridWrap.style.cursor = ''; };
+    gridWrap.addEventListener('pointerup', stopDrag);
+    gridWrap.addEventListener('pointercancel', stopDrag);
+
+    zoomSlider.addEventListener('input', () => {
+      const rect = gridWrap.getBoundingClientRect();
+      const cx = rect.width / 2, cy = rect.height / 2;
+      const mx = (cx - panX) / zoom;
+      const my = (cy - panY) / zoom;
+      zoom = parseInt(zoomSlider.value) / 100;
+      panX = cx - mx * zoom;
+      panY = cy - my * zoom;
+      applyTransform();
     });
 
     const runSection = () => {
@@ -330,18 +309,14 @@ document.addEventListener('DOMContentLoaded', () => {
         trimBlanks:    true,
       });
       measureContent();
-      updateCache();
-      // Auto-zoom to fit if content overflows
-      const fitW = naturalW > 0 ? cachedVW / naturalW : 1;
-      const fitH = naturalH > 0 ? cachedVH / naturalH : 1;
+      // Auto-zoom to fit viewport
+      const vw = gridWrap.clientWidth;
+      const vh = gridWrap.clientHeight;
+      const fitW = naturalW > 0 ? vw / naturalW : 1;
+      const fitH = naturalH > 0 ? vh / naturalH : 1;
       zoom = Math.min(1, fitW, fitH);
+      panX = 0; panY = 0;
       applyTransform();
-      applyLayout();
-      // Scroll to top-left of actual content (past the padding)
-      gridWrap.scrollLeft = cachedVW / 2;
-      gridWrap.scrollTop  = cachedVH / 2;
-      cachedScrollX = gridWrap.scrollLeft;
-      cachedScrollY = gridWrap.scrollTop;
       zoomSlider.disabled = zoom >= 1;
       if (sec.postRender) sec.postRender(a, section);
     };

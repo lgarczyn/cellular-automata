@@ -94,12 +94,13 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
 .controls button:hover { opacity: 0.85; }
 
 .grid-wrap {
-  overflow: auto;
+  overflow: hidden;
   height: 500px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
   width: 100%;
+  cursor: grab;
 }
 .zoom-slider {
   position: absolute;
