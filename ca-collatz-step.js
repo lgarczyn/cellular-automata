@@ -15,9 +15,28 @@ CA.CollatzStep = class CollatzStep extends CA.MulBy3Plus1 {
     + 'The LeastEdge expands diagonally into trailing zeros, performing /2 automatically.';
   }
 
+  analyzeSequence(input) {
+    let n = BigInt(input);
+    let steps = 0;
+    let totalHalvings = 0;
+    let maxWidth = 0;
+    while (n > 1n) {
+      if (n % 2n === 0n) {
+        n = n / 2n;
+        totalHalvings++;
+      } else {
+        n = 3n * n + 1n;
+        steps++;
+      }
+      const needed = totalHalvings + CA.CellularAutomaton.bitLength(Number(n));
+      if (needed > maxWidth) maxWidth = needed;
+    }
+    return { steps, maxWidth };
+  }
+
   suggestSize(input) {
-    const b = CA.CellularAutomaton.bitLength(input);
-    return { width: b + 200, height: 1000 };
+    const { steps, maxWidth } = this.analyzeSequence(input);
+    return { width: maxWidth + 10, height: steps + 2 };
   }
 
   run(input, width, height) {

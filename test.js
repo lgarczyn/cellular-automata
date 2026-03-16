@@ -35,7 +35,7 @@ function section(name) {
 section('Division by 2');
 const RANGE = [];
 for (let i = 0; i <= 1024; i++) RANGE.push(i);
-for (const n of [2047, 4095, 8191, 16383, 32767, 65535]) RANGE.push(n);
+for (const n of [2047, 4095, 8191, 16383, 32767, 65535, 989345275647]) RANGE.push(n);
 
 for (const input of RANGE) {
   const a = new CA.DivBy2();

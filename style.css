@@ -141,4 +141,7 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
 .grid-wrap td.source-highlight { outline: 2px solid #58a6ff; outline-offset: -2px; z-index: 2; position: relative; }
 .grid-wrap td.hovered-cell { outline: 2px solid #f0883e; outline-offset: -2px; z-index: 3; position: relative; }
 
+.zoom-far td { font-size: 0; }
+.zoom-far text { display: none; }
+
 footer { text-align: center; padding: 2rem 1rem; color: var(--text-dim); font-size: 0.8rem; }

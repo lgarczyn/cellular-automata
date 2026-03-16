@@ -62,11 +62,11 @@ CA.Collatz = class Collatz extends CA.CellularAutomaton {
 
   cellStyle(cell) {
     if (cell === null) return { text: '', colors: ['#0d1117'], fg: '#222', carry: false };
+    const c = cell.carry > 0;
     return {
       text:   String(cell.digit),
-      colors: [cell.digit ? '#2ea043' : '#1a1e24'],
-      fg:     cell.digit ? '#fff' : '#555',
-      carry:  cell.carry > 0,
+      colors: [cell.digit ? (c ? '#3fb950' : '#2ea043') : (c ? '#1e2a1e' : '#1a1e24')],
+      fg:     cell.digit ? '#fff' : (c ? '#666' : '#555'),
     };
   }
 

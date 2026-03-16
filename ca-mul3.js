@@ -63,10 +63,11 @@ CA.MulBy3 = class MulBy3 extends CA.CellularAutomaton {
 
   cellStyle(cell) {
     if (cell === null) return { text: '', colors: ['#0d1117'], fg: '#222' };
+    const c = cell.carry > 0;
     return {
-      text:   cell.carry > 0 ? cell.digit + '+' : String(cell.digit),
-      colors: [cell.digit ? '#7c3aed' : '#1a1e24'],
-      fg:     cell.digit ? '#fff' : '#444',
+      text:   c ? cell.digit + '+' : String(cell.digit),
+      colors: [cell.digit ? (c ? '#9455f5' : '#7c3aed') : (c ? '#2a2240' : '#1a1e24')],
+      fg:     cell.digit ? '#fff' : (c ? '#666' : '#444'),
     };
   }
 

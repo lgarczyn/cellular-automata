@@ -200,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // zoomContent holds the actual rendered content, scaled via transform
     const zoomContent = document.createElement('div');
     zoomContent.style.transformOrigin = 'top left';
+    zoomContent.style.willChange = 'transform';
     zoomContent.style.position = 'absolute';
     zoomContent.style.top = '0';
     zoomContent.style.left = '0';
@@ -226,27 +227,47 @@ document.addEventListener('DOMContentLoaded', () => {
     let zoom = 1;
     let naturalW = 0, naturalH = 0;
 
-    const applyZoom = () => {
-      const vw = gridWrap.clientWidth;
-      const vh = gridWrap.clientHeight;
-      const padX = vw / 2;
-      const padY = vh / 2;
-      zoomContent.style.transform = `scale(${zoom})`;
+    // Cached viewport dimensions — updated on resize/run, never in wheel handler
+    let cachedVW = 0, cachedVH = 0, cachedRect = null;
+    const updateCache = () => {
+      cachedVW = gridWrap.clientWidth;
+      cachedVH = gridWrap.clientHeight;
+      cachedRect = gridWrap.getBoundingClientRect();
+    };
+    new ResizeObserver(updateCache).observe(gridWrap);
+
+    // Layout-only update: resizes sizer to match zoom (triggers reflow)
+    const applyLayout = () => {
+      const padX = cachedVW / 2;
+      const padY = cachedVH / 2;
       zoomContent.style.left = padX + 'px';
       zoomContent.style.top  = padY + 'px';
       zoomSizer.style.width  = (naturalW * zoom + padX * 2) + 'px';
       zoomSizer.style.height = (naturalH * zoom + padY * 2) + 'px';
+      updateCache();
+    };
+
+    // Fast update: only transform + slider (no reflow)
+    const applyTransform = () => {
+      zoomContent.style.transform = `scale(${zoom})`;
       zoomSlider.value = String(Math.round(zoom * 100));
+      zoomContent.classList.toggle('zoom-far', zoom < 0.4);
     };
 
     const measureContent = () => {
       const el = zoomContent.firstElementChild;
       if (!el) return;
-      // Measure at scale 1
       zoomContent.style.transform = 'none';
       naturalW = el.scrollWidth || el.offsetWidth;
       naturalH = el.scrollHeight || el.offsetHeight;
     };
+
+    // Track scroll position without forcing reflow
+    let cachedScrollX = 0, cachedScrollY = 0;
+    gridWrap.addEventListener('scroll', () => {
+      cachedScrollX = gridWrap.scrollLeft;
+      cachedScrollY = gridWrap.scrollTop;
+    }, { passive: true });
 
     let pendingZoom = null;
     let zoomAnchor = null;
@@ -255,32 +276,38 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
 
-      const rect = gridWrap.getBoundingClientRect();
-      const vw = gridWrap.clientWidth;
-      const vh = gridWrap.clientHeight;
-      const padX = vw / 2;
-      const padY = vh / 2;
-      const mx = (e.clientX - rect.left + gridWrap.scrollLeft - padX) / zoom;
-      const my = (e.clientY - rect.top  + gridWrap.scrollTop  - padY) / zoom;
+      // Use cached values — no layout reads here
+      const padX = cachedVW / 2;
+      const padY = cachedVH / 2;
+      const mx = (e.clientX - cachedRect.left + cachedScrollX - padX) / zoom;
+      const my = (e.clientY - cachedRect.top  + cachedScrollY - padY) / zoom;
 
       zoom = Math.min(1, Math.max(0.05, zoom * factor));
       zoomSlider.disabled = false;
-      zoomAnchor = { mx, my, cx: e.clientX - rect.left, cy: e.clientY - rect.top, padX, padY };
+      zoomAnchor = { mx, my, cx: e.clientX - cachedRect.left, cy: e.clientY - cachedRect.top, padX, padY };
 
       if (!pendingZoom) {
         pendingZoom = requestAnimationFrame(() => {
           pendingZoom = null;
-          applyZoom();
           const a = zoomAnchor;
-          gridWrap.scrollLeft = a.mx * zoom + a.padX - a.cx;
-          gridWrap.scrollTop  = a.my * zoom + a.padY - a.cy;
+          // All reads first (from cache — no layout reads)
+          const sx = a.mx * zoom + a.padX - a.cx;
+          const sy = a.my * zoom + a.padY - a.cy;
+          // All writes batched together (no reads after)
+          applyTransform();
+          zoomSizer.style.width  = (naturalW * zoom + a.padX * 2) + 'px';
+          zoomSizer.style.height = (naturalH * zoom + a.padY * 2) + 'px';
+          gridWrap.scrollTo(sx, sy);
+          cachedScrollX = sx;
+          cachedScrollY = sy;
         });
       }
     }, { passive: false });
 
     zoomSlider.addEventListener('input', () => {
       zoom = parseInt(zoomSlider.value) / 100;
-      applyZoom();
+      applyTransform();
+      applyLayout();
     });
 
     const runSection = () => {
@@ -303,16 +330,18 @@ document.addEventListener('DOMContentLoaded', () => {
         trimBlanks:    true,
       });
       measureContent();
+      updateCache();
       // Auto-zoom to fit if content overflows
-      const vw = gridWrap.clientWidth;
-      const vh = gridWrap.clientHeight;
-      const fitW = naturalW > 0 ? vw / naturalW : 1;
-      const fitH = naturalH > 0 ? vh / naturalH : 1;
+      const fitW = naturalW > 0 ? cachedVW / naturalW : 1;
+      const fitH = naturalH > 0 ? cachedVH / naturalH : 1;
       zoom = Math.min(1, fitW, fitH);
-      applyZoom();
+      applyTransform();
+      applyLayout();
       // Scroll to top-left of actual content (past the padding)
-      gridWrap.scrollLeft = vw / 2;
-      gridWrap.scrollTop  = vh / 2;
+      gridWrap.scrollLeft = cachedVW / 2;
+      gridWrap.scrollTop  = cachedVH / 2;
+      cachedScrollX = gridWrap.scrollLeft;
+      cachedScrollY = gridWrap.scrollTop;
       zoomSlider.disabled = zoom >= 1;
       if (sec.postRender) sec.postRender(a, section);
     };

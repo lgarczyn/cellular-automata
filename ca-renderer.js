@@ -23,15 +23,45 @@ CA.Renderer = class Renderer {
     this.container.style.setProperty('--cell-size', cellSize + 'px');
 
     const cellMap = new Map();
+    const blank = a.blankState;
     const tbl = document.createElement('table');
     for (let r = 0; r < grid.length; r++) {
+      const row = grid[r];
+      const len = row.length;
+      // Find first and last non-blank column (iterating in display order: high c first)
+      let first = len, last = -1;
+      for (let c = 0; c < len; c++) {
+        const v = row[c];
+        if (v !== null && v !== blank) { if (c < first) first = c; last = c; }
+      }
       const tr = document.createElement('tr');
-      for (let c = grid[r].length - 1; c >= 0; c--) {
-        const td = this._makeTD(grid[r][c], a, r, c);
-        td.dataset.row = r;
-        td.dataset.col = c;
-        cellMap.set(`${r},${c}`, td);
-        tr.appendChild(td);
+      if (first > last) {
+        // Entire row is blank — single spacer
+        const sp = document.createElement('td');
+        sp.colSpan = len;
+        tr.appendChild(sp);
+      } else {
+        // Leading spacer (high columns, displayed first since loop is reversed)
+        const leadBlanks = len - 1 - last;
+        if (leadBlanks > 0) {
+          const sp = document.createElement('td');
+          sp.colSpan = leadBlanks;
+          tr.appendChild(sp);
+        }
+        // Actual cells
+        for (let c = last; c >= first; c--) {
+          const td = this._makeTD(row[c], a, r, c);
+          td.dataset.row = r;
+          td.dataset.col = c;
+          cellMap.set(`${r},${c}`, td);
+          tr.appendChild(td);
+        }
+        // Trailing spacer (low columns)
+        if (first > 0) {
+          const sp = document.createElement('td');
+          sp.colSpan = first;
+          tr.appendChild(sp);
+        }
       }
       tbl.appendChild(tr);
     }
@@ -401,7 +431,9 @@ CA.Renderer = class Renderer {
   }
 
   _makeTD(value, automaton, r, c) {
-    const td    = document.createElement('td');
+    const td = document.createElement('td');
+    if (value === null || value === automaton.blankState) return td;
+
     const style = automaton.cellStyle(value, r, c);
     const colors = style.colors;
 
@@ -417,7 +449,7 @@ CA.Renderer = class Renderer {
     }
 
     td.style.color = style.fg || this._autoFG(colors[0]);
-    td.textContent = style.text;
+    if (style.text) td.textContent = style.text;
     return td;
   }
 
