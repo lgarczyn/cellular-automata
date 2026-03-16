@@ -54,18 +54,17 @@ CA.SECTIONS = [
       { label: 'Number', key: 'input', type: 'number', min: 0, max: 65535 },
     ],
     postRender(a, container) {
-      // Compute full Collatz sequence (including even steps)
+      // The CA does: row 0 = input, then strips factors of 2 from the
+      // input before applying 3x+1. Each subsequent row is 3x+1 then strip 2s.
       const input = a.readRow(0);
-      const fullSeq = [input];
+      const expected = [input];
       let n = input;
-      while (n > 1 && fullSeq.length < 1000) {
-        n = (n % 2 === 0) ? n / 2 : n * 3 + 1;
-        fullSeq.push(n);
+      while (n > 1 && n % 2 === 0) n = n / 2;  // odd part of input
+      while (n > 1 && expected.length < 1000) {
+        n = n * 3 + 1;
+        while (n > 1 && n % 2 === 0) n = n / 2;
+        expected.push(n);
       }
-
-      // Get CA row values (odd-only steps)
-      const caValues = [];
-      for (let r = 0; r < a.height; r++) caValues.push(a.readRow(r));
 
       // Build comparison table
       let old = container.querySelector('.collatz-compare');
@@ -77,7 +76,7 @@ CA.SECTIONS = [
       const tbl = document.createElement('table');
       tbl.style.cssText = 'border-collapse:collapse; width:auto;';
       const hdr = document.createElement('tr');
-      for (const h of ['Step', 'Expected', 'CA Result', '']) {
+      for (const h of ['Row', 'Expected', 'CA Result', '']) {
         const th = document.createElement('th');
         th.textContent = h;
         th.style.cssText = 'padding:4px 12px; text-align:right; color:#8b949e; border-bottom:1px solid #30363d;';
@@ -85,40 +84,25 @@ CA.SECTIONS = [
       }
       tbl.appendChild(hdr);
 
-      // Map full sequence to CA rows: odd values match CA rows, even values show empty
-      let caIdx = 0;
-      for (let i = 0; i < fullSeq.length; i++) {
-        const exp = fullSeq[i];
-        const isOdd = exp % 2 === 1 || exp === 1;
-        const got = isOdd && caIdx < caValues.length ? caValues[caIdx] : null;
-        const match = got !== null && exp === got;
-        const style = 'padding:3px 12px; text-align:right; border-bottom:1px solid #21262d;';
-        const dimStyle = style + ' color:#484f58;';
+      const style = 'padding:3px 12px; text-align:right; border-bottom:1px solid #21262d;';
+      const len = Math.min(expected.length, a.height);
+      for (let r = 0; r < len; r++) {
+        const exp = expected[r];
+        const got = a.readRow(r);
+        const match = exp === got;
 
         const tr = document.createElement('tr');
-        // Step
-        const tdStep = document.createElement('td');
-        tdStep.textContent = i;
-        tdStep.style.cssText = isOdd ? style : dimStyle;
-        tr.appendChild(tdStep);
-        // Expected
-        const tdExp = document.createElement('td');
-        tdExp.textContent = exp;
-        tdExp.style.cssText = isOdd ? style : dimStyle;
-        tr.appendChild(tdExp);
-        // CA Result
-        const tdGot = document.createElement('td');
-        tdGot.textContent = got !== null ? got : '';
-        tdGot.style.cssText = isOdd ? style : dimStyle;
-        tr.appendChild(tdGot);
-        // Match indicator
+        for (const text of [r, exp, got]) {
+          const td = document.createElement('td');
+          td.textContent = text;
+          td.style.cssText = style;
+          tr.appendChild(td);
+        }
         const tdMatch = document.createElement('td');
-        tdMatch.textContent = isOdd ? (match ? '✓' : '✗') : '';
+        tdMatch.textContent = match ? '✓' : '✗';
         tdMatch.style.cssText = style + (match ? ' color:#3fb950;' : ' color:#f85149;');
         tr.appendChild(tdMatch);
         tbl.appendChild(tr);
-
-        if (isOdd) caIdx++;
       }
 
       div.appendChild(tbl);

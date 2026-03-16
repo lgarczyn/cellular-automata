@@ -10,8 +10,8 @@ CA.MulBy3Plus1 = class MulBy3Plus1 extends CA.MulBy3 {
     super({ displayMode });
     this.name = '3x + 1';
     this.description =
-      'Each row is 3×(row above) + 1. Same as ×3, but the LSB carry is forced to 1, '
-    + 'which adds 1 at every step. The rightmost column shows the injected +1 carry.';
+      'Same rule as ×3, but the boundary tile (LeastEdge) injects a permanent carry of 1. '
+    + 'One tile change turns multiplication into 3x+1.';
   }
 
   suggestSize(input, height) {

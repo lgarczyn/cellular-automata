@@ -12,8 +12,7 @@ CA.Collatz = class Collatz extends CA.CellularAutomaton {
   constructor({ displayMode = 'grid' } = {}) {
     super({
       name:         displayMode !== 'grid' ? 'Collatz (Hex)' : 'Collatz (Binary)',
-      description:  'The Collatz procedure encoded as a CA. '
-                  + 'Each cell holds a digit and carry; null = blank.',
+      description:  'The Collatz procedure from 6 tile types and local matching rules.',
       blankState:   null,
       seedRows:     2,
       displayMode,

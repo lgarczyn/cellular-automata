@@ -9,7 +9,6 @@ CA.CollatzHexRotated = class CollatzHexRotated extends CA.CollatzStep {
     super({ displayMode: 'hexgrid-rotated' });
     this.name = '3x+1 / 2 (Hex Rotated)';
     this.description =
-      'Collatz step on a hexagonal grid where each column slides one cell up '
-    + 'relative to its left neighbor, producing a downward flow.';
+      'Rotated hex view: columns slide up so the 3 inputs sit directly above each cell.';
   }
 };

@@ -5,7 +5,8 @@ CA.Rule110 = class Rule110 extends CA.CellularAutomaton {
   constructor() {
     super({
       name:        'Rule 110',
-      description: 'An elementary cellular automaton. Despite its simplicity, Rule 110 is Turing-complete.',
+      description: 'An elementary CA: 2 states, 3 neighbors, 8-entry lookup table. '
+                 + 'Every cell is a pure function of the 3 cells above it.',
       blankState:  0,
       seedRows:    1,
       displayMode: 'grid',

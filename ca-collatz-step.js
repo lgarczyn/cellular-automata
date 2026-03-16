@@ -11,8 +11,9 @@ CA.CollatzStep = class CollatzStep extends CA.MulBy3Plus1 {
     super({ displayMode });
     this.name = '3x+1 / 2';
     this.description =
-      'Collatz step: 3x+1 then divide out factors of 2. '
-    + 'The LeastEdge expands diagonally into trailing zeros, performing /2 automatically.';
+      'One more rule: LeastEdge expands diagonally into trailing zeros, '
+    + 'dividing out factors of 2. The full Collatz step — 3x+1 then strip even factors — '
+    + 'from the same handful of tiles.';
   }
 
   analyzeSequence(input) {

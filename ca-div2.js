@@ -5,7 +5,8 @@ CA.DivBy2 = class DivBy2 extends CA.CellularAutomaton {
   constructor() {
     super({
       name:        'Division by 2',
-      description: 'Each row is the previous row right-shifted by one bit — integer division by 2.',
+      description: 'Each cell copies its upper-left neighbor — a 1-input rule that produces a bit-shift. '
+                 + 'Integer division by 2, from the simplest possible CA.',
       blankState:  0,
       seedRows:    1,
       displayMode: 'grid',

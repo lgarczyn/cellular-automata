@@ -16,11 +16,9 @@ CA.MulBy3 = class MulBy3 extends CA.CellularAutomaton {
   constructor({ displayMode = 'grid' } = {}) {
     super({
       name:         displayMode !== 'grid' ? 'Multiply by 3 (Hex)' : 'Multiply by 3',
-      description:  'Each row is 3× the row above, computed as 2x + x. '
-                  + 'The 2x term is a bit-shift: the digit at (r−1, c−1). '
-                  + 'The 1x term is the digit directly above: (r−1, c). '
-                  + 'These two are summed with the carry from the left neighbour (r, c−1). '
-                  + 'If the sum is 2 or 3, a carry (orange outline) propagates rightward.',
+      description:  'Add upper-left + above + carry from left: a full adder. '
+                  + 'Each cell is one of 6 tiles (0, 0+, 1, 1+, null, LeastEdge), '
+                  + 'chosen by the same 3-neighbor pattern as Rule 110. The result is ×3.',
       blankState:   null,
       seedRows:     1,
       displayMode,
