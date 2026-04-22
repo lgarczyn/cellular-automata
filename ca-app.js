@@ -175,15 +175,31 @@ document.addEventListener('DOMContentLoaded', () => {
     controls.appendChild(btn);
     section.appendChild(controls);
 
-    // gridWrap is the fixed-size viewport — overflow hidden, no scrollbars
+    // gridWrap is the fixed-size viewport — overflow hidden, no scrollbars.
+    // Inactive by default: touch/wheel/pointer flow to the page. Tap to
+    // activate — gestures then pan/zoom the grid. Tap outside or press
+    // Escape or click the × to deactivate.
     const gridWrap = document.createElement('div');
     gridWrap.className = 'grid-wrap';
+    gridWrap.dataset.active = 'false';
 
     // zoomContent holds the rendered content, positioned via translate + scale
     const zoomContent = document.createElement('div');
     zoomContent.style.transformOrigin = '0 0';
     zoomContent.style.willChange = 'transform';
     gridWrap.appendChild(zoomContent);
+
+    const interactHint = document.createElement('div');
+    interactHint.className = 'interact-hint';
+    interactHint.textContent = 'Tap to interact';
+    gridWrap.appendChild(interactHint);
+
+    const exitBtn = document.createElement('button');
+    exitBtn.type = 'button';
+    exitBtn.className = 'exit-interact';
+    exitBtn.setAttribute('aria-label', 'Exit interactive mode');
+    exitBtn.textContent = '×';
+    gridWrap.appendChild(exitBtn);
 
     // Zoom slider
     const zoomSlider = document.createElement('input');
@@ -219,9 +235,33 @@ document.addEventListener('DOMContentLoaded', () => {
       naturalH = el.scrollHeight || el.offsetHeight;
     };
 
+    // ── Activation state ──
+    let isActive = false;
+    const setActive = (active) => {
+      if (active === isActive) return;
+      isActive = active;
+      gridWrap.dataset.active = active ? 'true' : 'false';
+      if (!active) {
+        dragging = false;
+        touchGesture = null;
+        gridWrap.style.cursor = '';
+      }
+    };
+    gridWrap.addEventListener('click', e => {
+      if (e.target === exitBtn) { setActive(false); return; }
+      if (!isActive) setActive(true);
+    });
+    document.addEventListener('pointerdown', e => {
+      if (isActive && !zoomWrap.contains(e.target)) setActive(false);
+    }, true);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && isActive) setActive(false);
+    });
+
     // ── Wheel zoom (around cursor) ──
     let pendingZoom = null;
     gridWrap.addEventListener('wheel', e => {
+      if (!isActive) return;  // inactive: let the page scroll
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
       const rect = gridWrap.getBoundingClientRect();
@@ -242,9 +282,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, { passive: false });
 
-    // ── Drag to pan (mouse / pen only — touch is handled below) ──
+    // ── Drag to pan (mouse / pen — touch handled below) ──
     let dragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
     gridWrap.addEventListener('pointerdown', e => {
+      if (!isActive) return;
       if (e.pointerType === 'touch') return;
       if (e.button !== 0) return;
       dragging = true;
@@ -263,52 +304,65 @@ document.addEventListener('DOMContentLoaded', () => {
     gridWrap.addEventListener('pointerup', stopDrag);
     gridWrap.addEventListener('pointercancel', stopDrag);
 
-    // ── Touch: single-finger passes through to page scroll (via
-    // touch-action: pan-y in CSS). Two fingers = pinch-zoom + pan. ──
+    // ── Touch gestures when active: 1 finger pans, 2 fingers pinch+pan ──
     let touchGesture = null;
+    const beginPan = t => ({
+      mode: 'pan',
+      startX: t.clientX, startY: t.clientY,
+      panStartX: panX, panStartY: panY,
+    });
+    const beginPinch = (t1, t2) => ({
+      mode: 'pinch',
+      cx: (t1.clientX + t2.clientX) / 2,
+      cy: (t1.clientY + t2.clientY) / 2,
+      dist: Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY) || 1,
+    });
     gridWrap.addEventListener('touchstart', e => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        const t1 = e.touches[0], t2 = e.touches[1];
-        touchGesture = {
-          cx: (t1.clientX + t2.clientX) / 2,
-          cy: (t1.clientY + t2.clientY) / 2,
-          dist: Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY),
-        };
-      } else {
-        touchGesture = null;
-      }
+      if (!isActive) return;
+      e.preventDefault();
+      if (e.touches.length === 1)      touchGesture = beginPan(e.touches[0]);
+      else if (e.touches.length >= 2)  touchGesture = beginPinch(e.touches[0], e.touches[1]);
     }, { passive: false });
     gridWrap.addEventListener('touchmove', e => {
-      if (e.touches.length !== 2 || !touchGesture) return;
+      if (!isActive || !touchGesture) return;
       e.preventDefault();
-      const t1 = e.touches[0], t2 = e.touches[1];
-      const newCx = (t1.clientX + t2.clientX) / 2;
-      const newCy = (t1.clientY + t2.clientY) / 2;
-      const newDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY) || touchGesture.dist;
-      const rect = gridWrap.getBoundingClientRect();
-      // Zoom around previous midpoint
-      const scale = newDist / touchGesture.dist;
-      const mx = (touchGesture.cx - rect.left - panX) / zoom;
-      const my = (touchGesture.cy - rect.top  - panY) / zoom;
-      const newZoom = Math.max(0.02, zoom * scale);
-      panX = (touchGesture.cx - rect.left) - mx * newZoom;
-      panY = (touchGesture.cy - rect.top)  - my * newZoom;
-      // Plus translation from midpoint movement (two-finger pan)
-      panX += newCx - touchGesture.cx;
-      panY += newCy - touchGesture.cy;
-      zoom = newZoom;
-      touchGesture.cx = newCx;
-      touchGesture.cy = newCy;
-      touchGesture.dist = newDist;
-      zoomSlider.disabled = false;
-      applyTransform();
+      if (touchGesture.mode === 'pan' && e.touches.length === 1) {
+        const t = e.touches[0];
+        panX = touchGesture.panStartX + (t.clientX - touchGesture.startX);
+        panY = touchGesture.panStartY + (t.clientY - touchGesture.startY);
+        applyTransform();
+      } else if (touchGesture.mode === 'pinch' && e.touches.length >= 2) {
+        const t1 = e.touches[0], t2 = e.touches[1];
+        const newCx   = (t1.clientX + t2.clientX) / 2;
+        const newCy   = (t1.clientY + t2.clientY) / 2;
+        const newDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY) || touchGesture.dist;
+        const rect    = gridWrap.getBoundingClientRect();
+        const scale   = newDist / touchGesture.dist;
+        const mx      = (touchGesture.cx - rect.left - panX) / zoom;
+        const my      = (touchGesture.cy - rect.top  - panY) / zoom;
+        const newZoom = Math.max(0.02, zoom * scale);
+        panX = (touchGesture.cx - rect.left) - mx * newZoom;
+        panY = (touchGesture.cy - rect.top)  - my * newZoom;
+        panX += newCx - touchGesture.cx;
+        panY += newCy - touchGesture.cy;
+        zoom = newZoom;
+        touchGesture.cx = newCx; touchGesture.cy = newCy; touchGesture.dist = newDist;
+        zoomSlider.disabled = false;
+        applyTransform();
+      }
     }, { passive: false });
-    const endTouch = e => { if (e.touches.length < 2) touchGesture = null; };
+    const endTouch = e => {
+      if (!isActive) { touchGesture = null; return; }
+      // Re-seed gesture when finger count changes so pan/pinch transitions smoothly
+      if (e.touches.length === 0)       touchGesture = null;
+      else if (e.touches.length === 1)  touchGesture = beginPan(e.touches[0]);
+      else                              touchGesture = beginPinch(e.touches[0], e.touches[1]);
+    };
     gridWrap.addEventListener('touchend', endTouch);
     gridWrap.addEventListener('touchcancel', endTouch);
 
     zoomSlider.addEventListener('input', () => {
+      setActive(true);
       const rect = gridWrap.getBoundingClientRect();
       const cx = rect.width / 2, cy = rect.height / 2;
       const mx = (cx - panX) / zoom;

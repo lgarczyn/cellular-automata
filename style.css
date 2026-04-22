@@ -94,20 +94,67 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
 .controls button:hover { opacity: 0.85; }
 
 .grid-wrap {
+  position: relative;
   overflow: hidden;
   height: 500px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
   width: 100%;
-  cursor: grab;
-  /* Single-finger touch scrolls the page; two-finger gestures are
-     captured by our own handlers for pan + pinch-zoom of the grid. */
-  touch-action: pan-y;
+  cursor: pointer;
+  /* Inactive: browser handles all gestures (page scroll, pinch-zoom). */
+  touch-action: auto;
   -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  transition: box-shadow 0.15s, border-color 0.15s;
 }
+.grid-wrap[data-active="true"] {
+  /* Active: we capture all gestures for pan/zoom. */
+  touch-action: none;
+  cursor: grab;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.35);
+}
+.grid-wrap[data-active="true"]:active { cursor: grabbing; }
+
+.interact-hint {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  padding: 0.25rem 0.55rem;
+  background: rgba(13, 17, 23, 0.75);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  pointer-events: none;
+  z-index: 15;
+  transition: opacity 0.15s;
+}
+.grid-wrap[data-active="true"] .interact-hint { opacity: 0; }
+
+.exit-interact {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(13, 17, 23, 0.85);
+  color: var(--text);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 15;
+}
+.exit-interact:hover { background: var(--border); }
+.grid-wrap[data-active="true"] .exit-interact { display: flex; }
 .zoom-slider {
   position: absolute;
   top: 4px;
