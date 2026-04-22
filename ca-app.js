@@ -242,9 +242,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, { passive: false });
 
-    // ── Drag to pan ──
+    // ── Drag to pan (mouse / pen only — touch is handled below) ──
     let dragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
     gridWrap.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'touch') return;
       if (e.button !== 0) return;
       dragging = true;
       dragStartX = e.clientX; dragStartY = e.clientY;
@@ -261,6 +262,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const stopDrag = () => { dragging = false; gridWrap.style.cursor = ''; };
     gridWrap.addEventListener('pointerup', stopDrag);
     gridWrap.addEventListener('pointercancel', stopDrag);
+
+    // ── Touch: single-finger passes through to page scroll (via
+    // touch-action: pan-y in CSS). Two fingers = pinch-zoom + pan. ──
+    let touchGesture = null;
+    gridWrap.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const t1 = e.touches[0], t2 = e.touches[1];
+        touchGesture = {
+          cx: (t1.clientX + t2.clientX) / 2,
+          cy: (t1.clientY + t2.clientY) / 2,
+          dist: Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY),
+        };
+      } else {
+        touchGesture = null;
+      }
+    }, { passive: false });
+    gridWrap.addEventListener('touchmove', e => {
+      if (e.touches.length !== 2 || !touchGesture) return;
+      e.preventDefault();
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const newCx = (t1.clientX + t2.clientX) / 2;
+      const newCy = (t1.clientY + t2.clientY) / 2;
+      const newDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY) || touchGesture.dist;
+      const rect = gridWrap.getBoundingClientRect();
+      // Zoom around previous midpoint
+      const scale = newDist / touchGesture.dist;
+      const mx = (touchGesture.cx - rect.left - panX) / zoom;
+      const my = (touchGesture.cy - rect.top  - panY) / zoom;
+      const newZoom = Math.max(0.02, zoom * scale);
+      panX = (touchGesture.cx - rect.left) - mx * newZoom;
+      panY = (touchGesture.cy - rect.top)  - my * newZoom;
+      // Plus translation from midpoint movement (two-finger pan)
+      panX += newCx - touchGesture.cx;
+      panY += newCy - touchGesture.cy;
+      zoom = newZoom;
+      touchGesture.cx = newCx;
+      touchGesture.cy = newCy;
+      touchGesture.dist = newDist;
+      zoomSlider.disabled = false;
+      applyTransform();
+    }, { passive: false });
+    const endTouch = e => { if (e.touches.length < 2) touchGesture = null; };
+    gridWrap.addEventListener('touchend', endTouch);
+    gridWrap.addEventListener('touchcancel', endTouch);
 
     zoomSlider.addEventListener('input', () => {
       const rect = gridWrap.getBoundingClientRect();

@@ -101,6 +101,12 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
   background: var(--surface);
   width: 100%;
   cursor: grab;
+  /* Single-finger touch scrolls the page; two-finger gestures are
+     captured by our own handlers for pan + pinch-zoom of the grid. */
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .zoom-slider {
   position: absolute;
@@ -149,3 +155,34 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
 .zoom-far text { display: none; }
 
 footer { text-align: center; padding: 2rem 1rem; color: var(--text-dim); font-size: 0.8rem; }
+
+.collatz-compare { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.collatz-compare table { min-width: max-content; }
+
+@media (max-width: 700px) {
+  header { padding: 1.75rem 1rem 1.25rem; }
+  header h1 { font-size: 1.6rem; }
+  header p { font-size: 0.9rem; }
+
+  nav {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.4rem 0.75rem;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav a { padding: 0.35rem 0.6rem; font-size: 0.8rem; }
+
+  section.ca-section { padding: 1.5rem 0.75rem 2rem; }
+  section.ca-section h2 { font-size: 1.3rem; }
+  section.ca-section .desc { font-size: 0.9rem; }
+
+  .controls { gap: 0.5rem; }
+  .controls input[type="number"],
+  .controls input[type="text"] { width: 110px; }
+
+  .grid-wrap { height: 60vh; max-height: 500px; min-height: 280px; }
+  .zoom-slider { opacity: 0.4; }
+}
