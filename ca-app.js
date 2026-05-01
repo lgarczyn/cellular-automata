@@ -409,6 +409,8 @@ document.addEventListener('DOMContentLoaded', () => {
     runSection();
   }
 
+  CA.HailstoneRecords.render(main);
+
   // Highlight active nav link based on scroll position
   const sections = document.querySelectorAll('section.ca-section');
   const navLinks = document.querySelectorAll('#main-nav a');
