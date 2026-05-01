@@ -2,8 +2,10 @@
 
 // Hailstone records: numbers whose Collatz total stopping time exceeds
 // every smaller positive integer's (OEIS A006877). For each record n we
-// render the input's binary digits as a row, and the bit at the input's
-// most-significant position as the Collatz sequence iterates downward.
+// run the 3x+1/2 cellular automaton and render two horizontal strips of
+// CA cells: the input's binary digits (top), and the cell at the input's
+// most-significant column sampled across every CA row (below). Cells are
+// drawn with the CA's own styling so digit/carry markers are preserved.
 
 CA.HailstoneRecords = {
 
@@ -15,16 +17,6 @@ CA.HailstoneRecords = {
       steps++;
     }
     return steps;
-  },
-
-  collatzSequence(n) {
-    const seq = [n];
-    let v = n;
-    while (v > 1) {
-      v = v % 2 === 0 ? v / 2 : 3 * v + 1;
-      seq.push(v);
-    }
-    return seq;
   },
 
   computeRecords(limit) {
@@ -44,54 +36,81 @@ CA.HailstoneRecords = {
     return n <= 0 ? 1 : Math.floor(Math.log2(n)) + 1;
   },
 
-  bitAt(v, pos) {
-    return Math.floor(v / Math.pow(2, pos)) % 2;
-  },
-
-  toBitsLSB(n) {
-    const bits = [];
-    let v = n;
-    while (v > 0) {
-      bits.push(v % 2);
-      v = Math.floor(v / 2);
+  // Build a styled cell <span> from the CA grid at (r, c), matching the
+  // CA's own cellStyle so digit/carry/LeastEdge appear consistent with
+  // the larger 3x+1/2 visualization above.
+  makeCell(ca, r, c) {
+    const span = document.createElement('span');
+    span.className = 'h-cell';
+    const cell = ca.get(r, c);
+    if (cell === null || cell === ca.blankState) {
+      span.classList.add('h-cell-blank');
+      return span;
     }
-    if (bits.length === 0) bits.push(0);
-    return bits;
+    const style = ca.cellStyle(cell, r, c);
+    if (style.hidden) {
+      span.classList.add('h-cell-blank');
+      return span;
+    }
+    span.style.background = style.colors[0];
+    span.style.color = style.fg || '#ccc';
+    if (style.text) span.textContent = style.text;
+    return span;
   },
 
   renderRecord(n, steps) {
-    const seq = this.collatzSequence(n);
-    const m = this.bitLength(n) - 1;
-    const inputBits = this.toBitsLSB(n);
+    const ca = new CA.CollatzStep();
+    const size = ca.suggestSize(n);
+    ca.run(n, size.width, size.height);
 
-    const rows = new Array(seq.length);
-    for (let r = 0; r < seq.length; r++) {
-      const cells = [`<td class="row-label">${r}</td>`];
-      for (let bp = m; bp >= 0; bp--) {
-        if (r === 0) {
-          const bit = bp < inputBits.length ? inputBits[bp] : 0;
-          cells.push(`<td class="bit-${bit}">${bit}</td>`);
-        } else if (bp === m) {
-          const bit = this.bitAt(seq[r], bp);
-          cells.push(`<td class="bit-${bit}">${bit}</td>`);
-        } else {
-          cells.push('<td class="bit-empty"></td>');
-        }
-      }
-      cells.push(`<td class="row-value">${seq[r]}</td>`);
-      rows[r] = '<tr>' + cells.join('') + '</tr>';
-    }
+    // Column index of the input's MSB in the CA grid:
+    //   col 0 = LeastEdge, col 1 = bit 0 (LSB), ..., col bitLength = bit (bitLength-1) = MSB.
+    const m = this.bitLength(n);
 
     const card = document.createElement('div');
     card.className = 'hailstone-record';
-    card.innerHTML =
-      `<div class="hailstone-record-header">`
-    +   `<span class="hailstone-num">${n}</span>`
-    +   `<span class="hailstone-steps">${steps} steps</span>`
-    + `</div>`
-    + `<div class="hailstone-grid-wrap">`
-    +   `<table class="hailstone-grid">${rows.join('')}</table>`
-    + `</div>`;
+
+    const header = document.createElement('div');
+    header.className = 'hailstone-record-header';
+    const numSpan = document.createElement('span');
+    numSpan.className = 'hailstone-num';
+    numSpan.textContent = n;
+    const stepsSpan = document.createElement('span');
+    stepsSpan.className = 'hailstone-steps';
+    stepsSpan.textContent = `${steps} steps`;
+    header.appendChild(numSpan);
+    header.appendChild(stepsSpan);
+    card.appendChild(header);
+
+    const rows = document.createElement('div');
+    rows.className = 'hailstone-rows';
+
+    // Row 1: input binary, MSB on the left → LSB on the right.
+    const binaryRow = document.createElement('div');
+    binaryRow.className = 'hailstone-row';
+    const binaryLabel = document.createElement('span');
+    binaryLabel.className = 'h-row-label';
+    binaryLabel.textContent = 'bin';
+    binaryRow.appendChild(binaryLabel);
+    for (let c = m; c >= 1; c--) {
+      binaryRow.appendChild(this.makeCell(ca, 0, c));
+    }
+    rows.appendChild(binaryRow);
+
+    // Row 2: column at the input's MSB position, sampled across every CA row,
+    // laid out horizontally (step 0 on the left → final step on the right).
+    const colRow = document.createElement('div');
+    colRow.className = 'hailstone-row';
+    const colLabel = document.createElement('span');
+    colLabel.className = 'h-row-label';
+    colLabel.textContent = 'col';
+    colRow.appendChild(colLabel);
+    for (let r = 0; r < ca.height; r++) {
+      colRow.appendChild(this.makeCell(ca, r, m));
+    }
+    rows.appendChild(colRow);
+
+    card.appendChild(rows);
     return card;
   },
 
@@ -111,9 +130,10 @@ CA.HailstoneRecords = {
     desc.textContent =
       `Numbers up to ${limit.toLocaleString()} whose Collatz total stopping time `
     + `exceeds every smaller integer's (OEIS A006877, computed at startup). `
-    + `Each card's top row is the input in binary (MSB on the left); the column `
-    + `below tracks the bit at the input's most-significant position as the `
-    + `Collatz sequence runs, with the value at each step shown alongside.`;
+    + `For each, the top strip is the input in binary (MSB on the left); the `
+    + `strip below is the cell at the input's most-significant column, sampled `
+    + `across every row of the 3x+1/2 cellular automaton — digit/carry marks `
+    + `come straight from the CA's own styling.`;
     section.appendChild(desc);
 
     const list = document.createElement('div');
