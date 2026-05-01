@@ -2,7 +2,7 @@ name: Deploy PR Preview
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, closed]
+    types: [opened, reopened, synchronize]
 
 concurrency:
   group: preview-${{ github.ref }}
@@ -16,8 +16,7 @@ jobs:
   deploy-preview:
     runs-on: ubuntu-latest
     steps:
-      - if: github.event.action != 'closed'
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Deploy preview
         uses: rossjrw/pr-preview-action@v1
@@ -25,4 +24,4 @@ jobs:
           source-dir: .
           preview-branch: gh-pages
           umbrella-dir: pr-preview
-          action: auto
+          action: deploy
