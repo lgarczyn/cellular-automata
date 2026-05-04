@@ -243,23 +243,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: false });
 
     // ── Drag to pan (mouse / pen only — touch is handled below) ──
+    // Pointer capture is deferred until movement crosses a threshold, so a
+    // stationary press-release still fires `click` on the underlying target
+    // (e.g. a row-0 toggle cell). Without the threshold, setPointerCapture
+    // redirects click events to gridWrap and they never reach the cells.
     let dragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
+    let pendingPointerId = null;
+    const DRAG_THRESHOLD = 4;
     gridWrap.addEventListener('pointerdown', e => {
       if (e.pointerType === 'touch') return;
       if (e.button !== 0) return;
-      dragging = true;
+      pendingPointerId = e.pointerId;
       dragStartX = e.clientX; dragStartY = e.clientY;
       panStartX = panX; panStartY = panY;
-      gridWrap.setPointerCapture(e.pointerId);
-      gridWrap.style.cursor = 'grabbing';
     });
     gridWrap.addEventListener('pointermove', e => {
+      if (pendingPointerId !== null && !dragging) {
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
+          dragging = true;
+          gridWrap.setPointerCapture(pendingPointerId);
+          gridWrap.style.cursor = 'grabbing';
+        }
+      }
       if (!dragging) return;
       panX = panStartX + (e.clientX - dragStartX);
       panY = panStartY + (e.clientY - dragStartY);
       applyTransform();
     });
-    const stopDrag = () => { dragging = false; gridWrap.style.cursor = ''; };
+    const stopDrag = () => { dragging = false; pendingPointerId = null; gridWrap.style.cursor = ''; };
     gridWrap.addEventListener('pointerup', stopDrag);
     gridWrap.addEventListener('pointercancel', stopDrag);
 
