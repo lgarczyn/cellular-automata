@@ -56,13 +56,24 @@ CA.SECTIONS = [
     postRender(a, container) {
       // The CA does: row 0 = input, then strips factors of 2 from the
       // input before applying 3x+1. Each subsequent row is 3x+1 then strip 2s.
-      const input = a.readRow(0);
+      // BigInt throughout because the user can toggle row-0 bits past 2^53,
+      // where Number precision falls apart and the comparison table goes
+      // garbage even though the CA's bit-level computation is still exact.
+      const readRowBig = (r) => {
+        let n = 0n;
+        for (let c = a.width - 1; c >= 0; c--) {
+          const cell = a.get(r, c);
+          if (cell !== null && cell !== CA.LEAST_EDGE) n = (n << 1n) | BigInt(cell.digit);
+        }
+        return n;
+      };
+      const input = readRowBig(0);
       const expected = [input];
       let n = input;
-      while (n > 1 && n % 2 === 0) n = n / 2;  // odd part of input
-      while (n > 1 && expected.length < 1000) {
-        n = n * 3 + 1;
-        while (n > 1 && n % 2 === 0) n = n / 2;
+      while (n > 1n && (n & 1n) === 0n) n = n >> 1n;  // odd part of input
+      while (n > 1n && expected.length < 1000) {
+        n = 3n * n + 1n;
+        while (n > 1n && (n & 1n) === 0n) n = n >> 1n;
         expected.push(n);
       }
 
@@ -88,11 +99,11 @@ CA.SECTIONS = [
       const len = Math.min(expected.length, a.height);
       for (let r = 0; r < len; r++) {
         const exp = expected[r];
-        const got = a.readRow(r);
+        const got = readRowBig(r);
         const match = exp === got;
 
         const tr = document.createElement('tr');
-        for (const text of [r, exp, got]) {
+        for (const text of [r, exp.toString(), got.toString()]) {
           const td = document.createElement('td');
           td.textContent = text;
           td.style.cssText = style;
