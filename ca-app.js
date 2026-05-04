@@ -359,6 +359,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const height = params.height ?? size.height;
       const width  = params.width  ?? size.width;
       a.run(input, width, height);
+
+      // Find a stable row-0 cell to anchor the camera around — its viewport
+      // position before vs. after the re-render lets us compensate for any
+      // table-width shift (the trajectory's max column can change with a
+      // single bit toggle, which slides every row-0 cell horizontally).
+      const findRow0Anchor = () => {
+        let best = null, bestCol = Infinity;
+        for (const td of zoomContent.querySelectorAll('td[data-row="0"]')) {
+          if (td.dataset.extend) continue;
+          const col = parseInt(td.dataset.col);
+          if (col < bestCol) { bestCol = col; best = td; }
+        }
+        return best ? { col: bestCol, x: best.getBoundingClientRect().left } : null;
+      };
+      const anchorBefore = preserveCamera ? findRow0Anchor() : null;
+
       new CA.Renderer(zoomContent, a).render({
         cellSize:      sec.cellSize,
         showRowLabels: true,
@@ -392,11 +408,24 @@ document.addEventListener('DOMContentLoaded', () => {
         panX = 0; panY = 0;
         applyTransform();
         zoomSlider.disabled = zoom >= 1;
+      } else if (anchorBefore) {
+        // Find the same anchor cell in the new DOM and shift panX so its
+        // viewport position matches the pre-render value. The anchor is
+        // the row-0 LSB column (data-col 0 or 1), which is stable for any
+        // bit-toggle that keeps n ≥ 1. If it disappears, fall back to the
+        // smallest available data-col on row 0.
+        let after = null;
+        for (const td of zoomContent.querySelectorAll('td[data-row="0"]')) {
+          if (td.dataset.extend) continue;
+          if (parseInt(td.dataset.col) === anchorBefore.col) { after = td; break; }
+        }
+        if (!after) after = findRow0Anchor() && zoomContent.querySelector('td[data-row="0"]:not([data-extend])');
+        if (after) {
+          const newX = after.getBoundingClientRect().left;
+          panX += (anchorBefore.x - newX);
+          applyTransform();
+        }
       }
-      // On preserveCamera, leave zoomContent.style.transform untouched —
-      // it persists across innerHTML replacements, so the user's pan/zoom
-      // stays exactly where it was. We deliberately skip measureContent()
-      // because it transiently sets transform:'none' (causing the wiggle).
       if (sec.postRender) sec.postRender(a, section);
     };
 
