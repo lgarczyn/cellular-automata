@@ -107,18 +107,23 @@ CA.HailstoneRecords = {
       binaryLabel.textContent = 'bin';
       binaryRow.appendChild(binaryLabel);
       for (let c = m; c >= 1; c--) {
-        const cell = this.makeCell(ca, 0, c);
+        // Build the styled cell, then wrap it in a <button> so click/keyboard
+        // work reliably across browsers (a span with text content was getting
+        // its clicks eaten by selection start logic on some setups).
+        const inner = this.makeCell(ca, 0, c);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'h-cell-toggle';
+        btn.title = `bit ${c - 1} — click to toggle`;
+        btn.appendChild(inner);
         const bitIndex = c - 1;
-        cell.classList.add('h-cell-toggle');
-        cell.title = `bit ${bitIndex} — click to toggle`;
-        cell.addEventListener('click', () => {
-          // Toggle without bitwise ops (safe for bit indices ≥ 31)
+        btn.addEventListener('click', () => {
           const mask = Math.pow(2, bitIndex);
           const isSet = Math.floor(currentN / mask) % 2 === 1;
           const next = isSet ? currentN - mask : currentN + mask;
           if (next >= 1) refresh(next);
         });
-        binaryRow.appendChild(cell);
+        binaryRow.appendChild(btn);
       }
       rows.appendChild(binaryRow);
 

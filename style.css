@@ -227,21 +227,30 @@ footer { text-align: center; padding: 2rem 1rem; color: var(--text-dim); font-si
   flex-shrink: 0;
 }
 .h-cell-blank { background: transparent; }
+/* Toggle is a <button> wrapping an .h-cell <span>. Reset all the button
+   chrome so it visually matches a bare cell, then add the affordances. */
 .h-cell-toggle {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  -webkit-user-select: none;
-  user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  transition: filter 0.1s, outline-offset 0.1s;
+  border-radius: 0;
+  flex-shrink: 0;
+  transition: filter 0.1s;
 }
+.h-cell-toggle > .h-cell { pointer-events: none; }
 .h-cell-toggle:hover {
   filter: brightness(1.35);
   outline: 1px solid var(--accent);
   outline-offset: 1px;
 }
-.h-cell-toggle:active {
-  filter: brightness(0.85);
+.h-cell-toggle:active { filter: brightness(0.85); }
+.h-cell-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 .hailstone-reset {
   margin-left: auto;
