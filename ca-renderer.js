@@ -20,119 +20,129 @@ CA.Renderer = class Renderer {
   }
 
   // ── Square grid (table) ──────────────────────────────────────────
+  //
+  // Each grid row becomes a <tr> with this column layout:
+  //   [leftSpacer] [extension?] [label] [data cells] [value] [rightSpacer]
+  //   ─ leftSpacer absorbs blank columns above the row's leftmost non-blank.
+  //   ─ extension is a "+" cell on row 0 only when onCellClick is set, used
+  //     to grow the input by one bit on click.
+  //   ─ label / value are the row-index and readRow(r) readout.
+  //   ─ data cells are rendered MSB-first (last column first), with runs of
+  //     blank/hidden cells merged into single colspan'd spacers.
 
   _renderGrid({ cellSize = 28, showRowLabels = true, showValues = false, trimBlanks = true, onCellClick = null } = {}) {
-    const a    = this.automaton;
-    const grid = trimBlanks ? a.trimmedGrid() : a.grid;
+    const a     = this.automaton;
+    const grid  = trimBlanks ? a.trimmedGrid() : a.grid;
+    const blank = a.blankState;
     this.container.style.setProperty('--cell-size', cellSize + 'px');
 
+    // ── small builders ────────────────────────────────────────────────
     const cellMap = new Map();
-    const blank = a.blankState;
-    const tbl = document.createElement('table');
-    if (onCellClick) tbl.classList.add('grid-clickable');
-    for (let r = 0; r < grid.length; r++) {
-      const row = grid[r];
+    const spacer = (colSpan) => {
+      const td = document.createElement('td');
+      td.colSpan = colSpan;
+      return td;
+    };
+    const isInvisibleCell = (v, r, c) => {
+      if (v === null || v === blank) return true;
+      return a.cellStyle(v, r, c).hidden === true;
+    };
+    const makeDataTD = (v, r, c) => {
+      const td = this._makeTD(v, a, r, c);
+      td.dataset.row = r;
+      td.dataset.col = c;
+      cellMap.set(`${r},${c}`, td);
+      return td;
+    };
+    const makeExtensionTD = (col) => {
+      const td = document.createElement('td');
+      td.className = 'cell-extend';
+      td.textContent = '+';
+      td.dataset.row = 0;
+      td.dataset.col = col;
+      td.dataset.extend = '1';
+      return td;
+    };
+    const makeLabelTD = (r) => {
+      const td = document.createElement('td');
+      if (showRowLabels) { td.textContent = r; td.className = 'row-label'; }
+      return td;
+    };
+    const makeValueTD = (r) => {
+      const td = document.createElement('td');
+      if (showValues) {
+        td.className = 'row-value';
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.textContent = a.readRow(r);
+        td.appendChild(span);
+      }
+      return td;
+    };
+
+    // ── per-row layout ────────────────────────────────────────────────
+    const buildRow = (r, row) => {
       const len = row.length;
-      // Find first and last visible column
+      // Find first and last visible column.
       let first = len, last = -1;
       for (let c = 0; c < len; c++) {
-        const v = row[c];
-        if (v === null || v === blank) continue;
-        const cs = a.cellStyle(v, r, c);
-        if (cs.hidden) continue;
+        if (isInvisibleCell(row[c], r, c)) continue;
         if (c < first) first = c;
         last = c;
       }
-      // Every row has len+2 columns: [spacer?] [label:1] [data] [value:1] [spacer?]
+
       const tr = document.createElement('tr');
       if (first > last) {
-        const sp = document.createElement('td');
-        sp.colSpan = len + 2;
-        tr.appendChild(sp);
-      } else {
-        // On row 0 with onCellClick set, steal one column from leadBlanks
-        // to render a "+" extension cell that adds a leading 1 when clicked.
-        const wantExtend = onCellClick && r === 0 && (len - 1 - last) >= 1;
-        const leadBlanks = (len - 1 - last) - (wantExtend ? 1 : 0);
-        // Left spacer
-        if (leadBlanks > 0) {
-          const sp = document.createElement('td');
-          sp.colSpan = leadBlanks;
-          tr.appendChild(sp);
-        }
-        // Extension cell — appears at grid col last+1 (the would-be next bit position).
-        if (wantExtend) {
-          const ext = document.createElement('td');
-          ext.className = 'cell-extend';
-          ext.textContent = '+';
-          ext.dataset.row = 0;
-          ext.dataset.col = last + 1;
-          ext.dataset.extend = '1';
-          tr.appendChild(ext);
-        }
-        // Row label (1 col, adjacent to data)
-        const lbl = document.createElement('td');
-        if (showRowLabels) { lbl.textContent = r; lbl.className = 'row-label'; }
-        tr.appendChild(lbl);
-        // Actual cells — skip hidden cells, merge them into spacers
-        let c = last;
-        while (c >= first) {
-          const v = row[c];
-          const isBlank = v === null || v === blank;
-          const isHidden = !isBlank && a.cellStyle(v, r, c).hidden;
-          if (isBlank || isHidden) {
-            // Count consecutive blank/hidden cells for colspan
-            let span = 1;
-            c--;
-            while (c >= first) {
-              const v2 = row[c];
-              const b2 = v2 === null || v2 === blank;
-              const h2 = !b2 && a.cellStyle(v2, r, c).hidden;
-              if (!b2 && !h2) break;
-              span++;
-              c--;
-            }
-            const sp = document.createElement('td');
-            sp.colSpan = span;
-            tr.appendChild(sp);
-          } else {
-            const td = this._makeTD(v, a, r, c);
-            td.dataset.row = r;
-            td.dataset.col = c;
-            cellMap.set(`${r},${c}`, td);
-            tr.appendChild(td);
-            c--;
-          }
-        }
-        // Row value (1 col, adjacent to data)
-        const val = document.createElement('td');
-        if (showValues) { val.textContent = a.readRow(r); val.className = 'row-value'; }
-        tr.appendChild(val);
-        // Right spacer
-        if (first > 0) {
-          const sp = document.createElement('td');
-          sp.colSpan = first;
-          tr.appendChild(sp);
+        // Entirely blank row.
+        tr.appendChild(spacer(len + 2));
+        return tr;
+      }
+
+      // Row 0 may steal one column from the left spacer for the "+" cell.
+      const wantExtend = onCellClick && r === 0 && (len - 1 - last) >= 1;
+      const leadBlanks = (len - 1 - last) - (wantExtend ? 1 : 0);
+
+      if (leadBlanks > 0)        tr.appendChild(spacer(leadBlanks));
+      if (wantExtend)            tr.appendChild(makeExtensionTD(last + 1));
+                                 tr.appendChild(makeLabelTD(r));
+
+      // Data cells, MSB-first; runs of blanks/hidden merge into spacers.
+      let c = last;
+      while (c >= first) {
+        if (isInvisibleCell(row[c], r, c)) {
+          const start = c;
+          while (c >= first && isInvisibleCell(row[c], r, c)) c--;
+          tr.appendChild(spacer(start - c));
+        } else {
+          tr.appendChild(makeDataTD(row[c], r, c));
+          c--;
         }
       }
-      tbl.appendChild(tr);
-    }
 
+                                 tr.appendChild(makeValueTD(r));
+      if (first > 0)             tr.appendChild(spacer(first));
+      return tr;
+    };
+
+    // ── assemble table ────────────────────────────────────────────────
+    const tbl = document.createElement('table');
+    if (onCellClick) tbl.classList.add('grid-clickable');
+    for (let r = 0; r < grid.length; r++) tbl.appendChild(buildRow(r, grid[r]));
+
+    // ── interaction wiring ────────────────────────────────────────────
     if (onCellClick) {
       tbl.addEventListener('click', e => {
         const td = e.target.closest('td[data-row]');
         if (!td) return;
-        const tr = parseInt(td.dataset.row);
-        if (tr !== 0) return;
-        const tc = parseInt(td.dataset.col);
-        onCellClick(tr, tc);
+        const r = parseInt(td.dataset.row);
+        if (r !== 0) return;
+        onCellClick(r, parseInt(td.dataset.col));
       });
     }
-
     this._attachGridHover(tbl, cellMap, a);
     this._attachTooltip(tbl, '[data-row]', el => {
-      const r = parseInt(el.dataset.row);
       if (el.dataset.extend) return 'click to add a leading 1';
+      const r = parseInt(el.dataset.row);
       const bitIdx = a.bitColToIndex(parseInt(el.dataset.col));
       const bitTip = (r === 0 && onCellClick && bitIdx !== null) ? `bit ${bitIdx} — click to toggle` : '';
       const rowTip = this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
