@@ -92,6 +92,12 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
   transition: opacity 0.15s;
 }
 .controls button:hover { opacity: 0.85; }
+.controls .row-count {
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-left: 0.25rem;
+}
 
 .grid-wrap {
   overflow: hidden;

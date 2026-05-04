@@ -173,6 +173,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.createElement('button');
     btn.textContent = 'Run';
     controls.appendChild(btn);
+    const rowCountEl = document.createElement('span');
+    rowCountEl.className = 'row-count';
+    controls.appendChild(rowCountEl);
     section.appendChild(controls);
 
     // gridWrap is the fixed-size viewport — overflow hidden, no scrollbars
@@ -332,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
       applyTransform();
     });
 
-    const runSection = () => {
+    const runSection = ({ preserveCamera = false } = {}) => {
       const params = Object.fromEntries(
         Object.entries(inputs).map(([key, inp]) => {
           const v = parseInt(inp.value);
@@ -350,7 +353,8 @@ document.addEventListener('DOMContentLoaded', () => {
         showRowLabels: true,
         showValues:    sec.showValues,
         trimBlanks:    true,
-        // Toggle row-0 bits by clicking. Updates the input field + re-runs.
+        // Toggle row-0 bits by clicking. Updates the input field + re-runs
+        // without resetting the user's pan/zoom.
         onCellClick: 'input' in inputs ? (r, c) => {
           if (r !== 0) return;
           const bitIdx = a.bitColToIndex(c);
@@ -361,23 +365,30 @@ document.addEventListener('DOMContentLoaded', () => {
           if (newN < (inputs.input.min !== '' ? parseInt(inputs.input.min) : 0)) return;
           inputs.input.value = newN;
           localStorage.setItem(`ca_${sec.id}_input`, String(newN));
-          runSection();
+          runSection({ preserveCamera: true });
         } : null,
       });
+      // Show row count next to the Run button.
+      rowCountEl.textContent = `${a.height} ${a.height === 1 ? 'row' : 'rows'}`;
       measureContent();
-      // Auto-zoom to fit viewport
-      const vw = gridWrap.clientWidth;
-      const vh = gridWrap.clientHeight;
-      const fitW = naturalW > 0 ? vw / naturalW : 1;
-      const fitH = naturalH > 0 ? vh / naturalH : 1;
-      zoom = Math.min(1, fitW, fitH);
-      panX = 0; panY = 0;
-      applyTransform();
-      zoomSlider.disabled = zoom >= 1;
+      if (!preserveCamera) {
+        // Auto-zoom to fit viewport on a fresh Run / first render.
+        const vw = gridWrap.clientWidth;
+        const vh = gridWrap.clientHeight;
+        const fitW = naturalW > 0 ? vw / naturalW : 1;
+        const fitH = naturalH > 0 ? vh / naturalH : 1;
+        zoom = Math.min(1, fitW, fitH);
+        panX = 0; panY = 0;
+        applyTransform();
+        zoomSlider.disabled = zoom >= 1;
+      } else {
+        // Re-apply current transform (DOM was replaced).
+        applyTransform();
+      }
       if (sec.postRender) sec.postRender(a, section);
     };
 
-    btn.addEventListener('click', runSection);
+    btn.addEventListener('click', () => runSection());
     runSection();
   }
 
