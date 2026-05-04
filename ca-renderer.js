@@ -17,7 +17,7 @@ CA.Renderer = class Renderer {
 
   // ── Square grid (table) ──────────────────────────────────────────
 
-  _renderGrid({ cellSize = 28, showRowLabels = true, showValues = false, trimBlanks = true } = {}) {
+  _renderGrid({ cellSize = 28, showRowLabels = true, showValues = false, trimBlanks = true, onCellClick = null } = {}) {
     const a    = this.automaton;
     const grid = trimBlanks ? a.trimmedGrid() : a.grid;
     this.container.style.setProperty('--cell-size', cellSize + 'px');
@@ -25,6 +25,7 @@ CA.Renderer = class Renderer {
     const cellMap = new Map();
     const blank = a.blankState;
     const tbl = document.createElement('table');
+    if (onCellClick) tbl.classList.add('grid-clickable');
     for (let r = 0; r < grid.length; r++) {
       const row = grid[r];
       const len = row.length;
@@ -45,12 +46,25 @@ CA.Renderer = class Renderer {
         sp.colSpan = len + 2;
         tr.appendChild(sp);
       } else {
-        const leadBlanks = len - 1 - last;
+        // On row 0 with onCellClick set, steal one column from leadBlanks
+        // to render a "+" extension cell that adds a leading 1 when clicked.
+        const wantExtend = onCellClick && r === 0 && (len - 1 - last) >= 1;
+        const leadBlanks = (len - 1 - last) - (wantExtend ? 1 : 0);
         // Left spacer
         if (leadBlanks > 0) {
           const sp = document.createElement('td');
           sp.colSpan = leadBlanks;
           tr.appendChild(sp);
+        }
+        // Extension cell — appears at grid col last+1 (the would-be next bit position).
+        if (wantExtend) {
+          const ext = document.createElement('td');
+          ext.className = 'cell-extend';
+          ext.textContent = '+';
+          ext.dataset.row = 0;
+          ext.dataset.col = last + 1;
+          ext.dataset.extend = '1';
+          tr.appendChild(ext);
         }
         // Row label (1 col, adjacent to data)
         const lbl = document.createElement('td');
@@ -100,10 +114,25 @@ CA.Renderer = class Renderer {
       tbl.appendChild(tr);
     }
 
+    if (onCellClick) {
+      tbl.addEventListener('click', e => {
+        const td = e.target.closest('td[data-row]');
+        if (!td) return;
+        const tr = parseInt(td.dataset.row);
+        if (tr !== 0) return;
+        const tc = parseInt(td.dataset.col);
+        onCellClick(tr, tc);
+      });
+    }
+
     this._attachGridHover(tbl, cellMap, a);
     this._attachTooltip(tbl, '[data-row]', el => {
       const r = parseInt(el.dataset.row);
-      return this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
+      if (el.dataset.extend) return 'click to add a leading 1';
+      const bitIdx = a.bitColToIndex(parseInt(el.dataset.col));
+      const bitTip = (r === 0 && onCellClick && bitIdx !== null) ? `bit ${bitIdx} — click to toggle` : '';
+      const rowTip = this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
+      return [bitTip, rowTip].filter(Boolean).join('  ');
     });
 
     this.container.innerHTML = '';
@@ -164,7 +193,7 @@ CA.Renderer = class Renderer {
 
   // ── Flat-top hexagonal grid (SVG) ───────────────────────────────
 
-  _renderHexGrid({ cellSize = 24, showRowLabels = true, showValues = false, trimBlanks = true } = {}) {
+  _renderHexGrid({ cellSize = 24, showRowLabels = true, showValues = false, trimBlanks = true, onCellClick = null } = {}) {
     const a    = this.automaton;
     const grid = trimBlanks ? a.trimmedGrid() : a.grid;
 
@@ -272,10 +301,20 @@ CA.Renderer = class Renderer {
       svg.appendChild(g);
     }
 
+    this._wireHexClick(svg, polyMap, grid, a, onCellClick, NS, fontSize, drawR, (col0Last) => {
+      // Pointy-top: extension hex sits at row 0, "would be" col col0Last+1.
+      const dc = grid[0].length - 1 - (col0Last + 1);
+      return { cx: padX + dc * hexW + 0 * hexW / 2, cy: padY };
+    }, (cx, cy, R) => this._hexPoints(cx, cy, R));
+
     this._attachHexHover(svg, polyMap, a, NS);
     this._attachTooltip(svg, 'polygon[data-row]', el => {
       const r = parseInt(el.dataset.row);
-      return this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
+      if (el.dataset.extend) return 'click to add a leading 1';
+      const bitIdx = a.bitColToIndex(parseInt(el.dataset.col));
+      const bitTip = (r === 0 && onCellClick && bitIdx !== null) ? `bit ${bitIdx} — click to toggle` : '';
+      const rowTip = this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
+      return [bitTip, rowTip].filter(Boolean).join('  ');
     });
 
     this.container.innerHTML = '';
@@ -286,7 +325,7 @@ CA.Renderer = class Renderer {
   // Columns slide one cell up relative to left neighbor; flat-top hexagons;
   // rows offset half a cell right.
 
-  _renderHexGridRotated({ cellSize = 24, showRowLabels = true, showValues = false, trimBlanks = true } = {}) {
+  _renderHexGridRotated({ cellSize = 24, showRowLabels = true, showValues = false, trimBlanks = true, onCellClick = null } = {}) {
     const a    = this.automaton;
     const grid = trimBlanks ? a.trimmedGrid() : a.grid;
 
@@ -397,14 +436,76 @@ CA.Renderer = class Renderer {
       svg.appendChild(g);
     }
 
+    this._wireHexClick(svg, polyMap, grid, a, onCellClick, NS, fontSize, drawR, (col0Last) => {
+      // Rotated: same row-0 placement scheme.
+      const dc = grid[0].length - 1 - (col0Last + 1);
+      return {
+        cx: padX + dc * colStep + 0 * colStep,
+        cy: padY + (0 + (numCols - 1 - dc)) * rowStep,
+      };
+    }, (cx, cy, R) => this._hexPointsFlat(cx, cy, R));
+
     this._attachHexHover(svg, polyMap, a, NS);
     this._attachTooltip(svg, 'polygon[data-row]', el => {
       const r = parseInt(el.dataset.row);
-      return this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
+      if (el.dataset.extend) return 'click to add a leading 1';
+      const bitIdx = a.bitColToIndex(parseInt(el.dataset.col));
+      const bitTip = (r === 0 && onCellClick && bitIdx !== null) ? `bit ${bitIdx} — click to toggle` : '';
+      const rowTip = this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
+      return [bitTip, rowTip].filter(Boolean).join('  ');
     });
 
     this.container.innerHTML = '';
     this.container.appendChild(svg);
+  }
+
+  // Common click + extension-cell wiring for both hex SVG renderers.
+  _wireHexClick(svg, polyMap, grid, a, onCellClick, NS, fontSize, drawR, posFn, pointsFn) {
+    if (!onCellClick) return;
+    let row0Last = -1;
+    for (let c = grid[0]?.length - 1 ?? -1; c >= 0; c--) {
+      const cell = grid[0][c];
+      if (cell === null || cell === a.blankState) continue;
+      const cs = a.cellStyle(cell, 0, c);
+      if (cs.hidden) continue;
+      row0Last = c;
+      break;
+    }
+    if (row0Last !== -1 && row0Last < grid[0].length - 1) {
+      const { cx, cy } = posFn(row0Last);
+      const ext = document.createElementNS(NS, 'polygon');
+      ext.setAttribute('points', pointsFn(cx, cy, drawR));
+      ext.setAttribute('fill', 'transparent');
+      ext.setAttribute('stroke', '#8b949e');
+      ext.setAttribute('stroke-width', '1');
+      ext.setAttribute('stroke-dasharray', '3 2');
+      ext.dataset.row = 0;
+      ext.dataset.col = row0Last + 1;
+      ext.dataset.extend = '1';
+      ext.style.cursor = 'pointer';
+      const txt = document.createElementNS(NS, 'text');
+      txt.setAttribute('x', cx);
+      txt.setAttribute('y', cy + fontSize * 0.35);
+      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('fill', '#8b949e');
+      txt.setAttribute('font-size', fontSize);
+      txt.setAttribute('font-family', "'SF Mono','Cascadia Code','Consolas',monospace");
+      txt.setAttribute('pointer-events', 'none');
+      txt.textContent = '+';
+      svg.appendChild(ext);
+      svg.appendChild(txt);
+    }
+    svg.addEventListener('click', e => {
+      const poly = e.target.closest('polygon[data-row]');
+      if (!poly) return;
+      const tr = parseInt(poly.dataset.row);
+      if (tr !== 0) return;
+      const tc = parseInt(poly.dataset.col);
+      onCellClick(tr, tc);
+    });
+    for (const [key, poly] of polyMap) {
+      if (key.startsWith('0,')) poly.style.cursor = 'pointer';
+    }
   }
 
   // Pointy-top hexagon vertex string for SVG polygon

@@ -337,6 +337,19 @@ document.addEventListener('DOMContentLoaded', () => {
         showRowLabels: true,
         showValues:    sec.showValues,
         trimBlanks:    true,
+        // Toggle row-0 bits by clicking. Updates the input field + re-runs.
+        onCellClick: 'input' in inputs ? (r, c) => {
+          if (r !== 0) return;
+          const bitIdx = a.bitColToIndex(c);
+          if (bitIdx === null || bitIdx < 0) return;
+          const mask = Math.pow(2, bitIdx);
+          const isSet = Math.floor(input / mask) % 2 === 1;
+          const newN = isSet ? input - mask : input + mask;
+          if (newN < (inputs.input.min !== '' ? parseInt(inputs.input.min) : 0)) return;
+          inputs.input.value = newN;
+          localStorage.setItem(`ca_${sec.id}_input`, String(newN));
+          runSection();
+        } : null,
       });
       measureContent();
       // Auto-zoom to fit viewport

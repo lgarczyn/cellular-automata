@@ -150,6 +150,31 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
 .grid-wrap td.source-highlight { outline: 2px solid #58a6ff; outline-offset: -2px; z-index: 2; position: relative; }
 .grid-wrap td.hovered-cell { outline: 2px solid #f0883e; outline-offset: -2px; z-index: 3; position: relative; }
 
+/* Row-0 click affordances when the renderer is in clickable mode. */
+.grid-wrap table.grid-clickable td[data-row="0"] { cursor: pointer; }
+.grid-wrap table.grid-clickable td[data-row="0"]:hover {
+  filter: brightness(1.3);
+}
+.grid-wrap td.cell-extend {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  min-width: var(--cell-size);
+  text-align: center;
+  vertical-align: middle;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px dashed var(--border);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.grid-wrap td.cell-extend:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(88, 166, 255, 0.1);
+}
+
 .zoom-far td { font-size: 0; }
 .zoom-far td.row-label, .zoom-far td.row-value { font-size: 0; }
 .zoom-far text { display: none; }
