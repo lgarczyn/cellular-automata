@@ -126,7 +126,14 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
 }
 .zoom-slider:hover, .zoom-slider:active { opacity: 0.8; }
 .zoom-slider:disabled { opacity: 0; pointer-events: none; }
-.grid-wrap table { border-collapse: separate; border-spacing: 2px; }
+.grid-wrap table {
+  border-collapse: separate;
+  border-spacing: 2px;
+  /* Fixed layout so the value column's long readout doesn't yank every
+     other column wider — without this, a single bit toggle that produces
+     a longer trajectory value visibly slides every cell sideways. */
+  table-layout: fixed;
+}
 .grid-wrap td {
   width: var(--cell-size);
   height: var(--cell-size);
@@ -136,6 +143,11 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
   font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
   font-size: 0.7rem;
   border: none;
+}
+.grid-wrap td.row-value {
+  /* Long readouts overflow visibly into the (otherwise empty) right
+     spacer area without affecting column widths. */
+  overflow: visible;
 }
 .ca-tooltip {
   position: fixed;
