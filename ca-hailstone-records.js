@@ -59,58 +59,86 @@ CA.HailstoneRecords = {
   },
 
   renderRecord(n, steps) {
-    const ca = new CA.CollatzStep();
-    const size = ca.suggestSize(n);
-    ca.run(n, size.width, size.height);
-
-    // Column index of the input's MSB in the CA grid:
-    //   col 0 = LeastEdge, col 1 = bit 0 (LSB), ..., col bitLength = bit (bitLength-1) = MSB.
-    const m = this.bitLength(n);
-
     const card = document.createElement('div');
     card.className = 'hailstone-record';
 
-    const header = document.createElement('div');
-    header.className = 'hailstone-record-header';
-    const numSpan = document.createElement('span');
-    numSpan.className = 'hailstone-num';
-    numSpan.textContent = n;
-    const stepsSpan = document.createElement('span');
-    stepsSpan.className = 'hailstone-steps';
-    stepsSpan.textContent = `${steps} steps`;
-    header.appendChild(numSpan);
-    header.appendChild(stepsSpan);
-    card.appendChild(header);
+    const refresh = (currentN) => {
+      const ca = new CA.CollatzStep();
+      const size = ca.suggestSize(currentN);
+      ca.run(currentN, size.width, size.height);
 
-    const rows = document.createElement('div');
-    rows.className = 'hailstone-rows';
+      // Column index of the input's MSB in the CA grid:
+      //   col 0 = LeastEdge, col 1 = bit 0 (LSB), ..., col bitLength = bit (bitLength-1) = MSB.
+      const m = this.bitLength(currentN);
+      const currentSteps = this.collatzLength(currentN);
+      const isOriginal = currentN === n;
 
-    // Row 1: input binary, MSB on the left → LSB on the right.
-    const binaryRow = document.createElement('div');
-    binaryRow.className = 'hailstone-row';
-    const binaryLabel = document.createElement('span');
-    binaryLabel.className = 'h-row-label';
-    binaryLabel.textContent = 'bin';
-    binaryRow.appendChild(binaryLabel);
-    for (let c = m; c >= 1; c--) {
-      binaryRow.appendChild(this.makeCell(ca, 0, c));
-    }
-    rows.appendChild(binaryRow);
+      card.innerHTML = '';
 
-    // Row 2: column at the input's MSB position, sampled across every CA row,
-    // laid out horizontally (step 0 on the left → final step on the right).
-    const colRow = document.createElement('div');
-    colRow.className = 'hailstone-row';
-    const colLabel = document.createElement('span');
-    colLabel.className = 'h-row-label';
-    colLabel.textContent = 'col';
-    colRow.appendChild(colLabel);
-    for (let r = 0; r < ca.height; r++) {
-      colRow.appendChild(this.makeCell(ca, r, m));
-    }
-    rows.appendChild(colRow);
+      const header = document.createElement('div');
+      header.className = 'hailstone-record-header';
+      const numSpan = document.createElement('span');
+      numSpan.className = 'hailstone-num';
+      numSpan.textContent = currentN;
+      const stepsSpan = document.createElement('span');
+      stepsSpan.className = 'hailstone-steps';
+      stepsSpan.textContent = `${currentSteps} steps`;
+      header.appendChild(numSpan);
+      header.appendChild(stepsSpan);
+      if (!isOriginal) {
+        const reset = document.createElement('button');
+        reset.className = 'hailstone-reset';
+        reset.textContent = `↺ ${n}`;
+        reset.title = `Reset to original record (${n})`;
+        reset.addEventListener('click', () => refresh(n));
+        header.appendChild(reset);
+      }
+      card.appendChild(header);
 
-    card.appendChild(rows);
+      const rows = document.createElement('div');
+      rows.className = 'hailstone-rows';
+
+      // Row 1: input binary, MSB on the left → LSB on the right.
+      // Each cell is clickable to toggle its bit.
+      const binaryRow = document.createElement('div');
+      binaryRow.className = 'hailstone-row';
+      const binaryLabel = document.createElement('span');
+      binaryLabel.className = 'h-row-label';
+      binaryLabel.textContent = 'bin';
+      binaryRow.appendChild(binaryLabel);
+      for (let c = m; c >= 1; c--) {
+        const cell = this.makeCell(ca, 0, c);
+        const bitIndex = c - 1;
+        cell.classList.add('h-cell-toggle');
+        cell.title = `bit ${bitIndex} — click to toggle`;
+        cell.addEventListener('click', () => {
+          // Toggle without bitwise ops (safe for bit indices ≥ 31)
+          const mask = Math.pow(2, bitIndex);
+          const isSet = Math.floor(currentN / mask) % 2 === 1;
+          const next = isSet ? currentN - mask : currentN + mask;
+          if (next >= 1) refresh(next);
+        });
+        binaryRow.appendChild(cell);
+      }
+      rows.appendChild(binaryRow);
+
+      // Row 2: column at the input's MSB position, sampled across every CA row,
+      // laid out horizontally (step 0 on the left → final step on the right).
+      const colRow = document.createElement('div');
+      colRow.className = 'hailstone-row';
+      const colLabel = document.createElement('span');
+      colLabel.className = 'h-row-label';
+      colLabel.textContent = 'col';
+      colRow.appendChild(colLabel);
+      for (let r = 0; r < ca.height; r++) {
+        colRow.appendChild(this.makeCell(ca, r, m));
+      }
+      rows.appendChild(colRow);
+
+      card.appendChild(rows);
+    };
+
+    refresh(n);
     return card;
   },
 
@@ -133,7 +161,8 @@ CA.HailstoneRecords = {
     + `For each, the top strip is the input in binary (MSB on the left); the `
     + `strip below is the cell at the input's most-significant column, sampled `
     + `across every row of the 3x+1/2 cellular automaton — digit/carry marks `
-    + `come straight from the CA's own styling.`;
+    + `come straight from the CA's own styling. `
+    + `Tap any bit in the top strip to toggle it and see the trajectory change live.`;
     section.appendChild(desc);
 
     const list = document.createElement('div');
