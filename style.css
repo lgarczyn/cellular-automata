@@ -229,12 +229,19 @@ footer { text-align: center; padding: 2rem 1rem; color: var(--text-dim); font-si
 .h-cell-blank { background: transparent; }
 .h-cell-toggle {
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   transition: filter 0.1s, outline-offset 0.1s;
 }
 .h-cell-toggle:hover {
   filter: brightness(1.35);
   outline: 1px solid var(--accent);
   outline-offset: 1px;
+}
+.h-cell-toggle:active {
+  filter: brightness(0.85);
 }
 .hailstone-reset {
   margin-left: auto;
