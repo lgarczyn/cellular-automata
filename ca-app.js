@@ -370,9 +370,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       // Show row count next to the Run button.
       rowCountEl.textContent = `${a.height} ${a.height === 1 ? 'row' : 'rows'}`;
-      measureContent();
       if (!preserveCamera) {
         // Auto-zoom to fit viewport on a fresh Run / first render.
+        measureContent();
         const vw = gridWrap.clientWidth;
         const vh = gridWrap.clientHeight;
         const fitW = naturalW > 0 ? vw / naturalW : 1;
@@ -381,10 +381,11 @@ document.addEventListener('DOMContentLoaded', () => {
         panX = 0; panY = 0;
         applyTransform();
         zoomSlider.disabled = zoom >= 1;
-      } else {
-        // Re-apply current transform (DOM was replaced).
-        applyTransform();
       }
+      // On preserveCamera, leave zoomContent.style.transform untouched —
+      // it persists across innerHTML replacements, so the user's pan/zoom
+      // stays exactly where it was. We deliberately skip measureContent()
+      // because it transiently sets transform:'none' (causing the wiggle).
       if (sec.postRender) sec.postRender(a, section);
     };
 
