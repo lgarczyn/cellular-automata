@@ -8,6 +8,10 @@ CA.Renderer = class Renderer {
   }
 
   render(opts = {}) {
+    // Clean up any tooltip elements from a previous render — they live on
+    // document.body and don't follow the redrawn table/SVG, so they would
+    // otherwise stay visible after a re-render (e.g. after a row-0 toggle).
+    for (const el of document.querySelectorAll('.ca-tooltip')) el.remove();
     const mode = this.automaton.displayMode;
     if (mode === 'hexgrid-rotated') this._renderHexGridRotated(opts);
     else if (mode === 'hexgrid')    this._renderHexGrid(opts);
