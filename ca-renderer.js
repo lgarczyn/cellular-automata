@@ -72,10 +72,7 @@ CA.Renderer = class Renderer {
       const td = document.createElement('td');
       if (showValues) {
         td.className = 'row-value';
-        const span = document.createElement('span');
-        span.className = 'value-text';
-        span.textContent = a.readRow(r);
-        td.appendChild(span);
+        td.textContent = a.readRow(r);
       }
       return td;
     };
@@ -127,6 +124,15 @@ CA.Renderer = class Renderer {
     // ── assemble table ────────────────────────────────────────────────
     const tbl = document.createElement('table');
     if (onCellClick) tbl.classList.add('grid-clickable');
+    // Explicit per-column widths so table-layout:fixed gives every
+    // column the cellsize regardless of any cell's content width — keeps
+    // a long readRow value from yanking the data columns sideways.
+    const totalCols = (grid[0]?.length ?? 0) + 2;
+    if (totalCols > 0) {
+      const colgroup = document.createElement('colgroup');
+      for (let i = 0; i < totalCols; i++) colgroup.appendChild(document.createElement('col'));
+      tbl.appendChild(colgroup);
+    }
     for (let r = 0; r < grid.length; r++) tbl.appendChild(buildRow(r, grid[r]));
 
     // ── interaction wiring ────────────────────────────────────────────
