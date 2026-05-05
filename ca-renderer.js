@@ -127,10 +127,16 @@ CA.Renderer = class Renderer {
     // Explicit per-column widths so table-layout:fixed gives every
     // column the cellsize regardless of any cell's content width — keeps
     // a long readRow value from yanking the data columns sideways.
+    // Inline style (rather than CSS-via-col-rule) because CSS variables
+    // don't always cascade through <col> elements in all browsers.
     const totalCols = (grid[0]?.length ?? 0) + 2;
     if (totalCols > 0) {
       const colgroup = document.createElement('colgroup');
-      for (let i = 0; i < totalCols; i++) colgroup.appendChild(document.createElement('col'));
+      for (let i = 0; i < totalCols; i++) {
+        const col = document.createElement('col');
+        col.style.width = cellSize + 'px';
+        colgroup.appendChild(col);
+      }
       tbl.appendChild(colgroup);
     }
     for (let r = 0; r < grid.length; r++) tbl.appendChild(buildRow(r, grid[r]));
