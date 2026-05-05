@@ -360,20 +360,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const width  = params.width  ?? size.width;
       a.run(input, width, height);
 
-      // Find a stable row-0 cell to anchor the camera around — its viewport
-      // position before vs. after the re-render lets us compensate for any
-      // table-width shift (the trajectory's max column can change with a
-      // single bit toggle, which slides every row-0 cell horizontally).
-      const findRow0Anchor = () => {
-        let best = null, bestCol = Infinity;
-        for (const td of zoomContent.querySelectorAll('td[data-row="0"]')) {
-          if (td.dataset.extend) continue;
-          const col = parseInt(td.dataset.col);
-          if (col < bestCol) { bestCol = col; best = td; }
-        }
-        return best ? { col: bestCol, x: best.getBoundingClientRect().left } : null;
+      // Anchor the camera on row 0's label cell — it's always present and
+      // sits at a fixed offset from the data cells, so keeping it stationary
+      // across re-renders also keeps every row-0 data cell stationary
+      // (column widths are pinned by the renderer's <colgroup>).
+      const findRowAnchor = () => {
+        const lbl = zoomContent.querySelector('tr:first-child td.row-label');
+        return lbl ? lbl.getBoundingClientRect().left : null;
       };
-      const anchorBefore = preserveCamera ? findRow0Anchor() : null;
+      const anchorBeforeX = preserveCamera ? findRowAnchor() : null;
 
       new CA.Renderer(zoomContent, a).render({
         cellSize:      sec.cellSize,
@@ -408,16 +403,11 @@ document.addEventListener('DOMContentLoaded', () => {
         panX = 0; panY = 0;
         applyTransform();
         zoomSlider.disabled = zoom >= 1;
-      } else if (anchorBefore) {
-        // Match the anchor cell's viewport-x in the new DOM.
-        let after = null;
-        for (const td of zoomContent.querySelectorAll('td[data-row="0"]')) {
-          if (td.dataset.extend) continue;
-          if (parseInt(td.dataset.col) === anchorBefore.col) { after = td; break; }
-        }
-        if (after) {
-          const newX = after.getBoundingClientRect().left;
-          panX += (anchorBefore.x - newX);
+      } else if (anchorBeforeX !== null) {
+        const newLbl = zoomContent.querySelector('tr:first-child td.row-label');
+        if (newLbl) {
+          const newX = newLbl.getBoundingClientRect().left;
+          panX += (anchorBeforeX - newX);
           applyTransform();
         }
       }
