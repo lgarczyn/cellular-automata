@@ -155,8 +155,13 @@ CA.Renderer = class Renderer {
     this._attachTooltip(tbl, '[data-row]', el => {
       if (el.dataset.extend) return 'click to add a leading 1';
       const r = parseInt(el.dataset.row);
-      const bitIdx = a.bitColToIndex(parseInt(el.dataset.col));
-      const bitTip = (r === 0 && onCellClick && bitIdx !== null) ? `bit ${bitIdx} — click to toggle` : '';
+      const c = parseInt(el.dataset.col);
+      const bitIdx = a.bitColToIndex(c);
+      let bitTip = '';
+      if (r === 0 && onCellClick) {
+        if (bitIdx === null && c === 0) bitTip = 'click to shift in a 1 (n → 2n+1)';
+        else if (bitIdx !== null && bitIdx >= 0) bitTip = `bit ${bitIdx} — click to toggle`;
+      }
       const rowTip = this._tooltipText(r, showRowLabels, showValues ? a.readRow(r) : null);
       return [bitTip, rowTip].filter(Boolean).join('  ');
     });

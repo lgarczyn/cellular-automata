@@ -381,10 +381,20 @@ document.addEventListener('DOMContentLoaded', () => {
         onCellClick: 'input' in inputs ? (r, c) => {
           if (r !== 0) return;
           const bitIdx = a.bitColToIndex(c);
-          if (bitIdx === null || bitIdx < 0) return;
-          const mask = Math.pow(2, bitIdx);
-          const isSet = Math.floor(input / mask) % 2 === 1;
-          const newN = isSet ? input - mask : input + mask;
+          let newN;
+          if (bitIdx === null) {
+            // Non-bit cell on row 0: for the 3x+1 family, col 0 is the
+            // LeastEdge "0+" carry display at the right of the row.
+            // Clicking it shifts in a new low bit (n → 2n + 1).
+            if (c !== 0) return;
+            newN = input * 2 + 1;
+          } else if (bitIdx < 0) {
+            return;
+          } else {
+            const mask = Math.pow(2, bitIdx);
+            const isSet = Math.floor(input / mask) % 2 === 1;
+            newN = isSet ? input - mask : input + mask;
+          }
           if (newN < (inputs.input.min !== '' ? parseInt(inputs.input.min) : 0)) return;
           inputs.input.value = newN;
           localStorage.setItem(`ca_${sec.id}_input`, String(newN));
