@@ -364,8 +364,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // sits at a fixed offset from the data cells, so keeping it stationary
       // across re-renders also keeps every row-0 data cell stationary
       // (column widths are pinned by the renderer's <colgroup>).
+      // Using :first-of-type because the table's first child is the
+      // <colgroup>; tr:first-child would never match.
       const findRowAnchor = () => {
-        const lbl = zoomContent.querySelector('tr:first-child td.row-label');
+        const lbl = zoomContent.querySelector('tr:first-of-type td.row-label');
         return lbl ? lbl.getBoundingClientRect().left : null;
       };
       const anchorBeforeX = preserveCamera ? findRowAnchor() : null;
@@ -404,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTransform();
         zoomSlider.disabled = zoom >= 1;
       } else if (anchorBeforeX !== null) {
-        const newLbl = zoomContent.querySelector('tr:first-child td.row-label');
+        const newLbl = zoomContent.querySelector('tr:first-of-type td.row-label');
         if (newLbl) {
           const newX = newLbl.getBoundingClientRect().left;
           panX += (anchorBeforeX - newX);
