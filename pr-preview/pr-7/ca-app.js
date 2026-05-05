@@ -360,17 +360,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const width  = params.width  ?? size.width;
       a.run(input, width, height);
 
-      // Anchor the camera on row 0's label cell — it's always present and
-      // sits at a fixed offset from the data cells, so keeping it stationary
-      // across re-renders also keeps every row-0 data cell stationary
-      // (column widths are pinned by the renderer's <colgroup>).
-      // Using :first-of-type because the table's first child is the
-      // <colgroup>; tr:first-child would never match.
-      const findRowAnchor = () => {
-        const lbl = zoomContent.querySelector('tr:first-of-type td.row-label');
-        return lbl ? lbl.getBoundingClientRect().left : null;
+      // Anchor the camera on the table's RIGHT edge instead of the top-left.
+      // The table extends leftward (more leading-blank columns) when the
+      // trajectory's max column grows, so the right edge is the stable
+      // reference: anchoring there means the visible row-0 cells (which
+      // sit just inside the right edge) don't slide on toggle.
+      const findRightAnchor = () => {
+        const tbl = zoomContent.querySelector('table');
+        return tbl ? tbl.getBoundingClientRect().right : null;
       };
-      const anchorBeforeX = preserveCamera ? findRowAnchor() : null;
+      const anchorBeforeX = preserveCamera ? findRightAnchor() : null;
 
       new CA.Renderer(zoomContent, a).render({
         cellSize:      sec.cellSize,
@@ -406,9 +405,9 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTransform();
         zoomSlider.disabled = zoom >= 1;
       } else if (anchorBeforeX !== null) {
-        const newLbl = zoomContent.querySelector('tr:first-of-type td.row-label');
-        if (newLbl) {
-          const newX = newLbl.getBoundingClientRect().left;
+        const newTbl = zoomContent.querySelector('table');
+        if (newTbl) {
+          const newX = newTbl.getBoundingClientRect().right;
           panX += (anchorBeforeX - newX);
           applyTransform();
         }

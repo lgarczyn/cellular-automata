@@ -129,15 +129,15 @@ section.ca-section .desc { color: var(--text-dim); margin-bottom: 1.5rem; max-wi
 .grid-wrap table {
   border-collapse: separate;
   border-spacing: 2px;
-  /* Explicit colgroup widths in the renderer pin every column to the
-     cellsize regardless of content. Without this, a long readRow value
-     auto-grows its column and yanks every other cell sideways. */
+  /* Renderer emits a <colgroup> with explicit per-column inline widths
+     (CSS variables on <col> don't always inherit reliably). Combined
+     with table-layout: fixed, that pins every column to cellsize. */
   table-layout: fixed;
 }
-.grid-wrap col { width: var(--cell-size); }
 .grid-wrap td {
   width: var(--cell-size);
   height: var(--cell-size);
+  min-width: var(--cell-size);
   text-align: center;
   vertical-align: middle;
   font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
