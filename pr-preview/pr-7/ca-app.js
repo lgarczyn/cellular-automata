@@ -374,9 +374,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return best ? { col: bestCol, x: best.getBoundingClientRect().left } : null;
       };
       const anchorBefore = preserveCamera ? findRow0Anchor() : null;
-      // Hide zoomContent during the DOM swap + correction so no
-      // intermediate frame can leak through.
-      if (preserveCamera) zoomContent.style.visibility = 'hidden';
 
       new CA.Renderer(zoomContent, a).render({
         cellSize:      sec.cellSize,
@@ -423,7 +420,6 @@ document.addEventListener('DOMContentLoaded', () => {
           panX += (anchorBefore.x - newX);
           applyTransform();
         }
-        zoomContent.style.visibility = '';
       }
       if (sec.postRender) sec.postRender(a, section);
     };
