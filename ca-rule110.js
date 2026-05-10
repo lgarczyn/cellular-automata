@@ -46,4 +46,17 @@ CA.Rule110 = class Rule110 extends CA.CellularAutomaton {
       ? { text: '', colors: ['#58a6ff'], fg: '#000' }
       : { text: '', colors: ['#161b22'], fg: '#333' };
   }
+
+  // initGrid maps bit c of the input to grid col (width-1-c). Inverting:
+  // col c → bit (width-1-c).
+  bitColToIndex(c) { return this.width - 1 - c; }
+
+  readRow(r) {
+    if (r < 0 || r >= this.height) return null;
+    let n = 0;
+    for (let c = 0; c < this.width; c++) {
+      if (this.grid[r][c]) n += Math.pow(2, this.width - 1 - c);
+    }
+    return n;
+  }
 };

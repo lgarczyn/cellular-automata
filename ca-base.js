@@ -48,6 +48,12 @@ CA.CellularAutomaton = class CellularAutomaton {
   suggestSize()     { return { width: 40, height: 40 }; }
   sourceCells(r, c) { return []; }
 
+  // Maps a row-0 grid column to the bit index it represents in the input
+  // number, or null if that column isn't a togglable bit cell. Default
+  // assumes column c == bit c (LSB at col 0). Override for CAs that
+  // shift (e.g. LeastEdge at col 0) or reverse (e.g. Rule 110).
+  bitColToIndex(c) { return c; }
+
   allSourceCells(r, c) {
     const visited = new Set();
     const queue = [{r, c}];

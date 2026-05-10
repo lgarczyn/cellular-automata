@@ -56,13 +56,24 @@ CA.SECTIONS = [
     postRender(a, container) {
       // The CA does: row 0 = input, then strips factors of 2 from the
       // input before applying 3x+1. Each subsequent row is 3x+1 then strip 2s.
-      const input = a.readRow(0);
+      // BigInt throughout because the user can toggle row-0 bits past 2^53,
+      // where Number precision falls apart and the comparison table goes
+      // garbage even though the CA's bit-level computation is still exact.
+      const readRowBig = (r) => {
+        let n = 0n;
+        for (let c = a.width - 1; c >= 0; c--) {
+          const cell = a.get(r, c);
+          if (cell !== null && cell !== CA.LEAST_EDGE) n = (n << 1n) | BigInt(cell.digit);
+        }
+        return n;
+      };
+      const input = readRowBig(0);
       const expected = [input];
       let n = input;
-      while (n > 1 && n % 2 === 0) n = n / 2;  // odd part of input
-      while (n > 1 && expected.length < 1000) {
-        n = n * 3 + 1;
-        while (n > 1 && n % 2 === 0) n = n / 2;
+      while (n > 1n && (n & 1n) === 0n) n = n >> 1n;  // odd part of input
+      while (n > 1n && expected.length < 1000) {
+        n = 3n * n + 1n;
+        while (n > 1n && (n & 1n) === 0n) n = n >> 1n;
         expected.push(n);
       }
 
@@ -88,11 +99,11 @@ CA.SECTIONS = [
       const len = Math.min(expected.length, a.height);
       for (let r = 0; r < len; r++) {
         const exp = expected[r];
-        const got = a.readRow(r);
+        const got = readRowBig(r);
         const match = exp === got;
 
         const tr = document.createElement('tr');
-        for (const text of [r, exp, got]) {
+        for (const text of [r, exp.toString(), got.toString()]) {
           const td = document.createElement('td');
           td.textContent = text;
           td.style.cssText = style;
@@ -173,6 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.createElement('button');
     btn.textContent = 'Run';
     controls.appendChild(btn);
+    const rowCountEl = document.createElement('span');
+    rowCountEl.className = 'row-count';
+    controls.appendChild(rowCountEl);
     section.appendChild(controls);
 
     // gridWrap is the fixed-size viewport — overflow hidden, no scrollbars
@@ -243,23 +257,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: false });
 
     // ── Drag to pan (mouse / pen only — touch is handled below) ──
+    // Pointer capture is deferred until movement crosses a threshold, so a
+    // stationary press-release still fires `click` on the underlying target
+    // (e.g. a row-0 toggle cell). Without the threshold, setPointerCapture
+    // redirects click events to gridWrap and they never reach the cells.
     let dragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
+    let pendingPointerId = null;
+    const DRAG_THRESHOLD = 4;
     gridWrap.addEventListener('pointerdown', e => {
       if (e.pointerType === 'touch') return;
       if (e.button !== 0) return;
-      dragging = true;
+      pendingPointerId = e.pointerId;
       dragStartX = e.clientX; dragStartY = e.clientY;
       panStartX = panX; panStartY = panY;
-      gridWrap.setPointerCapture(e.pointerId);
-      gridWrap.style.cursor = 'grabbing';
     });
     gridWrap.addEventListener('pointermove', e => {
+      if (pendingPointerId !== null && !dragging) {
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
+          dragging = true;
+          gridWrap.setPointerCapture(pendingPointerId);
+          gridWrap.style.cursor = 'grabbing';
+        }
+      }
       if (!dragging) return;
       panX = panStartX + (e.clientX - dragStartX);
       panY = panStartY + (e.clientY - dragStartY);
       applyTransform();
     });
-    const stopDrag = () => { dragging = false; gridWrap.style.cursor = ''; };
+    const stopDrag = () => { dragging = false; pendingPointerId = null; gridWrap.style.cursor = ''; };
     gridWrap.addEventListener('pointerup', stopDrag);
     gridWrap.addEventListener('pointercancel', stopDrag);
 
@@ -319,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
       applyTransform();
     });
 
-    const runSection = () => {
+    const runSection = ({ preserveCamera = false } = {}) => {
       const params = Object.fromEntries(
         Object.entries(inputs).map(([key, inp]) => {
           const v = parseInt(inp.value);
@@ -332,26 +359,73 @@ document.addEventListener('DOMContentLoaded', () => {
       const height = params.height ?? size.height;
       const width  = params.width  ?? size.width;
       a.run(input, width, height);
+
+      // Anchor the camera on the table's RIGHT edge instead of the top-left.
+      // The table extends leftward (more leading-blank columns) when the
+      // trajectory's max column grows, so the right edge is the stable
+      // reference: anchoring there means the visible row-0 cells (which
+      // sit just inside the right edge) don't slide on toggle.
+      const findRightAnchor = () => {
+        const tbl = zoomContent.querySelector('table');
+        return tbl ? tbl.getBoundingClientRect().right : null;
+      };
+      const anchorBeforeX = preserveCamera ? findRightAnchor() : null;
+
       new CA.Renderer(zoomContent, a).render({
         cellSize:      sec.cellSize,
         showRowLabels: true,
         showValues:    sec.showValues,
         trimBlanks:    true,
+        // Toggle row-0 bits by clicking. Updates the input field + re-runs
+        // without resetting the user's pan/zoom.
+        onCellClick: 'input' in inputs ? (r, c) => {
+          if (r !== 0) return;
+          const bitIdx = a.bitColToIndex(c);
+          let newN;
+          if (bitIdx === null) {
+            // Non-bit cell on row 0: for the 3x+1 family, col 0 is the
+            // LeastEdge "0+" carry display at the right of the row.
+            // Clicking it shifts in a new low bit (n → 2n + 1).
+            if (c !== 0) return;
+            newN = input * 2 + 1;
+          } else if (bitIdx < 0) {
+            return;
+          } else {
+            const mask = Math.pow(2, bitIdx);
+            const isSet = Math.floor(input / mask) % 2 === 1;
+            newN = isSet ? input - mask : input + mask;
+          }
+          if (newN < (inputs.input.min !== '' ? parseInt(inputs.input.min) : 0)) return;
+          inputs.input.value = newN;
+          localStorage.setItem(`ca_${sec.id}_input`, String(newN));
+          runSection({ preserveCamera: true });
+        } : null,
       });
-      measureContent();
-      // Auto-zoom to fit viewport
-      const vw = gridWrap.clientWidth;
-      const vh = gridWrap.clientHeight;
-      const fitW = naturalW > 0 ? vw / naturalW : 1;
-      const fitH = naturalH > 0 ? vh / naturalH : 1;
-      zoom = Math.min(1, fitW, fitH);
-      panX = 0; panY = 0;
-      applyTransform();
-      zoomSlider.disabled = zoom >= 1;
+      // Show row count next to the Run button.
+      rowCountEl.textContent = `${a.height} ${a.height === 1 ? 'row' : 'rows'}`;
+      if (!preserveCamera) {
+        // Auto-zoom to fit viewport on a fresh Run / first render.
+        measureContent();
+        const vw = gridWrap.clientWidth;
+        const vh = gridWrap.clientHeight;
+        const fitW = naturalW > 0 ? vw / naturalW : 1;
+        const fitH = naturalH > 0 ? vh / naturalH : 1;
+        zoom = Math.min(1, fitW, fitH);
+        panX = 0; panY = 0;
+        applyTransform();
+        zoomSlider.disabled = zoom >= 1;
+      } else if (anchorBeforeX !== null) {
+        const newTbl = zoomContent.querySelector('table');
+        if (newTbl) {
+          const newX = newTbl.getBoundingClientRect().right;
+          panX += (anchorBeforeX - newX);
+          applyTransform();
+        }
+      }
       if (sec.postRender) sec.postRender(a, section);
     };
 
-    btn.addEventListener('click', runSection);
+    btn.addEventListener('click', () => runSection());
     runSection();
   }
 
