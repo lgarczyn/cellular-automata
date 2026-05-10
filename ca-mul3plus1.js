@@ -61,4 +61,8 @@ CA.MulBy3Plus1 = class MulBy3Plus1 extends CA.MulBy3 {
     }
     return n;
   }
+
+  // Col 0 holds the LeastEdge boundary cell — not a bit. Col c (c≥1)
+  // holds bit (c-1) of the input.
+  bitColToIndex(c) { return c >= 1 ? c - 1 : null; }
 };
