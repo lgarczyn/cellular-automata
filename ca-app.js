@@ -121,6 +121,68 @@ CA.SECTIONS = [
     },
   },
   {
+    id:       'collatz-base6',
+    factory:  () => new CA.CollatzBase6(),
+    defaults: { input: 7 },
+    showValues: true,
+    cellSize:   32,
+    clickToggle: false,   // row-0 cells are base-6 digits, not togglable bits
+    controls: [
+      { label: 'Number', key: 'input', type: 'number', min: 1, max: 65535 },
+    ],
+    postRender(a, container) {
+      // Compare each diagonal readout against the shortcut Collatz map
+      // T(n) = n/2 (even) / (3n+1)/2 (odd), BigInt throughout.
+      const input = a.readIterate(0);
+      const expected = [input];
+      let n = input;
+      while (n > 1n && expected.length < 1000) {
+        n = (n & 1n) === 1n ? (3n * n + 1n) >> 1n : n >> 1n;
+        expected.push(n);
+      }
+
+      let old = container.querySelector('.collatz-compare');
+      if (old) old.remove();
+      const div = document.createElement('div');
+      div.className = 'collatz-compare';
+      div.style.cssText = 'margin-top:1rem; font-family:"SF Mono","Cascadia Code","Consolas",monospace; font-size:0.8rem;';
+
+      const tbl = document.createElement('table');
+      tbl.style.cssText = 'border-collapse:collapse; width:auto;';
+      const hdr = document.createElement('tr');
+      for (const h of ['Step', 'Expected', 'CA Diagonal', '']) {
+        const th = document.createElement('th');
+        th.textContent = h;
+        th.style.cssText = 'padding:4px 12px; text-align:right; color:#8b949e; border-bottom:1px solid #30363d;';
+        hdr.appendChild(th);
+      }
+      tbl.appendChild(hdr);
+
+      const style = 'padding:3px 12px; text-align:right; border-bottom:1px solid #21262d;';
+      for (let k = 0; k < expected.length; k++) {
+        const exp = expected[k];
+        const got = a.readIterate(k);
+        const match = exp === got;
+
+        const tr = document.createElement('tr');
+        for (const text of [k, exp.toString(), got.toString()]) {
+          const td = document.createElement('td');
+          td.textContent = text;
+          td.style.cssText = style;
+          tr.appendChild(td);
+        }
+        const tdMatch = document.createElement('td');
+        tdMatch.textContent = match ? '✓' : '✗';
+        tdMatch.style.cssText = style + (match ? ' color:#3fb950;' : ' color:#f85149;');
+        tr.appendChild(tdMatch);
+        tbl.appendChild(tr);
+      }
+
+      div.appendChild(tbl);
+      container.appendChild(div);
+    },
+  },
+  {
     id:       'collatz-hex',
     factory:  () => new CA.CollatzHex(),
     defaults: { input: 7 },
@@ -378,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
         trimBlanks:    true,
         // Toggle row-0 bits by clicking. Updates the input field + re-runs
         // without resetting the user's pan/zoom.
-        onCellClick: 'input' in inputs ? (r, c) => {
+        onCellClick: (sec.clickToggle !== false && 'input' in inputs) ? (r, c) => {
           if (r !== 0) return;
           const bitIdx = a.bitColToIndex(c);
           let newN;

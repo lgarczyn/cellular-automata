@@ -11,6 +11,7 @@ require('./ca-div2.js');
 require('./ca-mul3.js');
 require('./ca-mul3plus1.js');
 require('./ca-collatz-step.js');
+require('./ca-collatz-base6.js');
 require('./ca-collatz-hex.js');
 require('./ca-collatz-hex-rotated.js');
 
@@ -155,6 +156,62 @@ for (const input of RANGE.filter(n => n >= 1 && n % 2 === 1)) {
   if (ok) {
     passed++;
 
+  }
+}
+
+// ── Collatz base-6 true CA ─────────────────────────────────────
+
+section('Collatz base-6 true CA');
+for (const input of RANGE.filter(n => n >= 1)) {
+  const a = new CA.CollatzBase6();
+  const size = a.suggestSize(input);
+  a.run(input, size.width, size.height);
+
+  // Every diagonal readout must match the shortcut Collatz map.
+  let n = BigInt(input);
+  const expected = [n];
+  while (n > 1n && expected.length < 20000) {
+    n = n % 2n === 1n ? (3n * n + 1n) / 2n : n / 2n;
+    expected.push(n);
+  }
+
+  let ok = true;
+  for (let k = 0; k < expected.length; k++) {
+    const got = a.readIterate(k);
+    if (got !== expected[k]) {
+      console.error(`  FAIL: base6(${input}) step ${k}: expected ${expected[k]}, got ${got}`);
+      ok = false;
+      failed++;
+      break;
+    }
+  }
+  if (ok) passed++;
+}
+
+// True-CA property: computeCell must read only row r-1, so filling a row's
+// cells in REVERSE column order has to produce the identical grid. The
+// quasi-CAs (e.g. 3x+1) fail this — their intra-row carry peek breaks.
+{
+  class ReversedBase6 extends CA.CollatzBase6 {
+    computeRow(r) {
+      for (let c = this.width - 1; c >= 0; c--) this.grid[r][c] = this.computeCell(r, c);
+    }
+  }
+  for (const input of [7, 27, 703, 65535]) {
+    const fwd = new CA.CollatzBase6();
+    const rev = new ReversedBase6();
+    const size = fwd.suggestSize(input);
+    fwd.run(input, size.width, size.height);
+    rev.run(input, size.width, size.height);
+    let same = true;
+    for (let r = 0; r < fwd.height && same; r++) {
+      for (let c = 0; c < fwd.width && same; c++) {
+        const x = fwd.get(r, c), y = rev.get(r, c);
+        if ((x === null) !== (y === null)) same = false;
+        else if (x !== null && (x.d !== y.d || x.h !== y.h || x.p !== y.p || x.fresh !== y.fresh)) same = false;
+      }
+    }
+    assert(same, `base6(${input}) is not order-independent — intra-row dependency detected`);
   }
 }
 
