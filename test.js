@@ -191,6 +191,36 @@ for (const Cls of [CA.CollatzHex, CA.CollatzHexRotated]) {
   }
 }
 
+// ── Riemann zeta / xi ──────────────────────────────────────────
+
+section('Riemann zeta / xi');
+{
+  const ZM = require('./zeta-math.js');
+  const C = ZM.C;
+  const near = (a, b, eps) => Math.hypot(a.re - b.re, a.im - b.im) < eps;
+
+  assert(near(ZM.gamma(C(0.5)), C(Math.sqrt(Math.PI)), 1e-10), 'Γ(1/2) = √π');
+  assert(near(ZM.zeta(C(2)), C(Math.PI * Math.PI / 6), 1e-10), 'ζ(2) = π²/6');
+  assert(near(ZM.zeta(C(0)), C(-0.5), 1e-10), 'ζ(0) = −1/2');
+  assert(near(ZM.zeta(C(-1)), C(-1 / 12), 1e-10), 'ζ(−1) = −1/12');
+  assert(near(ZM.zeta(C(-2)), C(0), 1e-10), 'trivial zero at s = −2');
+  assert(near(ZM.zeta(C(0.5, 14.134725142)), C(0), 1e-6), 'first nontrivial zero on the critical line');
+  assert(near(ZM.xi(C(0)), C(0.5), 1e-10), 'ξ(0) = 1/2');
+  assert(near(ZM.xi(C(1)), C(0.5), 1e-10), 'ξ(1) = 1/2');
+
+  // the unfolding identity ξ(s) = ξ(1−s), at points well off the symmetry line
+  for (const [re, im] of [[0.3, 5], [-2.7, 11.4], [3.1, -8.2]]) {
+    const a = ZM.xi(C(re, im));
+    const b = ZM.xi(C(1 - re, -im));
+    assert(near(a, b, 1e-9 * (1 + Math.hypot(a.re, a.im))), `ξ(s) = ξ(1−s) at s = ${re}+${im}i`);
+  }
+
+  // reflection symmetry ζ(conj s) = conj ζ(s)
+  const z1 = ZM.zeta(C(0.8, 6.5));
+  const z2 = ZM.zeta(C(0.8, -6.5));
+  assert(near(z2, ZM.conj(z1), 1e-10), 'ζ(s̄) = conj ζ(s)');
+}
+
 // ── Summary ────────────────────────────────────────────────────
 
 console.log(`\n${'═'.repeat(40)}`);
