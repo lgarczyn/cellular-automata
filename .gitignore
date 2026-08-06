@@ -3,3 +3,5 @@
 !.github
 !.github/**
 !.nojekyll
+tools/collatz_steps
+tools/collatz_steps_*.bin
