@@ -170,6 +170,30 @@ a whole doubling chain lands on one point — it reduces to chain-length parity,
 which deletes alternating slabs bounded at `N/2^k` and keeps 2/3 of odd numbers.
 That depends on `N`, so it isn't a property of the map at all.
 
+## The fractal, found (postscript)
+
+Zooming in *magnitude* shows no self-similarity — that was settled above. But
+the residual is driven by the trajectory's parity sequence, and the first k
+parity decisions depend only on `n mod 2^k`. So the residual is naturally a
+function on the **2-adic integers**, and the right ordering to see it is
+bit-reversed n, which puts numbers sharing low bits next to each other
+(`tools/collatz_dyadic.py`, `images/collatz-dyadic.png`).
+
+In that ordering it is genuinely self-affine, and exactly, by construction:
+`steps(2n) = steps(n)+1` leaves `b` unchanged, so `n → 2n` acts as
+`x → x/2, z → z − 2.4`. Measured: the left half of the conditional-mean curve
+equals the whole curve shifted by −2.399 (predicted −2.4008), sd ≈ 0.5 on a
+curve of range ~70, and the same holds through zooms ×4 and ×16. Each extra
+bit of n explains the same **1.0%** slice of the residual's variance, linear
+from k = 1 to 16 with no saturation — equal energy per dyadic level, the
+signature of a Takagi-style self-affine curve.
+
+So both instincts from the exploration were right, they just live in different
+completions of the integers: the **quasicrystal lives in log n** (the
+archimedean side, where 2 and 3 fight over `log₂3`), and the **fractal lives in
+2-adic n** (where halving is exact and every zoom is a translate). The two
+pictures are complementary views of the same object, one per place.
+
 ## Where this leaves it
 
 Every arithmetic filter on n leaves the picture standing. That's the main
@@ -190,9 +214,11 @@ scale. That's the current floor.
 - **Per-octave antichains** — build one inside each octave rather than one
   global, so the top of the range can't eat everything below it. Would give a
   fair "each trajectory once" picture at every scale.
-- **Is the final residual actually structureless?** It is stationary and skewed;
-  nobody has checked it for autocorrelation, or for dependence on n's residue
-  class. If something is hiding in there, that's where.
+- **Is the final residual actually structureless?** Partially answered by the
+  postscript: it carries exactly 1% of its variance per bit of n, dyadically
+  self-affine. What remains open is the other 84% — the part *not* explained by
+  the first 16 bits. Autocorrelation in n, and whether the per-level increments
+  are themselves patterned or coin-flip, are still unchecked.
 - **Identify the residual law.** The `√log n` scaling suggests a random-walk
   limit; the visible right skew suggests it isn't Gaussian.
 - **Identities outside the `(j, B)` scheme.** The 11.1% figure is an upper bound
