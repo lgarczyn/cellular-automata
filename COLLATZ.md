@@ -220,6 +220,38 @@ trajectory walked backwards from 1, turning left per halving and right per
   heuristic *reason* the problem is hard: 3n+1 writes in a base the dynamics
   never reads.
 
+## The left edge is an instrument (third postscript)
+
+Found by eye, in the hex CA view: a "ping-pong" walk (diagonal from the left
+edge down to the LeastEdge boundary, back along that row, repeat) seemed to
+land on rows whose left edge grew by exactly one column. The literal claim
+breaks at the third bounce — the walk and the growth pattern are two
+quasi-periodic clocks with incommensurate rates that phase-lock briefly and
+then precess (42.3% coincidence over 3,904 bounces vs a 41.5% base rate). But
+chasing it exposed something better (`tools/collatz_edge.py`,
+`images/collatz-edge.png`):
+
+The left edge grows 2 columns instead of 1 exactly when `frac(log₂n) ≥
+2 − log₂3`, each row adds `log₂3` to that fraction, and the halvings subtract
+integers — which cannot touch a fractional part. **The entire LSB side, the
+whole unpredictable hash, is invisible to the left edge.** Its silhouette is
+the orbit coding of a pure circle rotation, perturbed only by the +1's
+~`1/(3n·ln2)` per row. Consequences, both verified:
+
+- **Predict**: from the single real `frac(log₂n₀)`, no trajectory computed,
+  the rotation reproduces 125 of 77031's 129 growth steps (97%). Median across
+  random inputs: 88% of the trajectory at n ~ 10^5, 95%+ at 10^11 — the
+  horizon grows with n because the +1 drift shrinks as 1/n.
+- **Decode**: conversely ~20 rows of the observed pattern pin `frac(log₂n)` to
+  ±0.01 — reading the *magnitude* of the input off a screenshot of the edge
+  (77031 recovered as 77148, 0.15% error, from 40 rows). Only the magnitude:
+  the low bits stay hidden, as the noise probes require.
+
+This is the sharpest form of the session's forgetting hierarchy: the LSB
+forgets its input in one step; the MSB phase drifts by ~1/n per step. The two
+edges of the number are its fastest and slowest clocks, and the hex graph
+displays both.
+
 ## Where this leaves it
 
 Every arithmetic filter on n leaves the picture standing. That's the main
