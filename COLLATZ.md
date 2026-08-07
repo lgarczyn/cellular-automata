@@ -194,6 +194,32 @@ archimedean side, where 2 and 3 fight over `log₂3`), and the **fractal lives i
 2-adic n** (where halving is exact and every zoom is a translate). The two
 pictures are complementary views of the same object, one per place.
 
+## Probing the noise (second postscript)
+
+Three tests of whether the dyadic cascade is itself patterned
+(`tools/collatz_noise.py`, `images/collatz-noise.png`), plus the tree drawn as
+geometry (`tools/collatz_feather.py`, `images/collatz-feather.png` — every
+trajectory walked backwards from 1, turning left per halving and right per
+3n+1, so shared tails coincide and the tree becomes literal branches).
+
+- **The cascade has no memory.** The level-k increments of the conditional-mean
+  tree have variance 5.71, flat for fourteen straight levels, and the
+  correlation between a child's increment and its parent's is +0.000 at every
+  level. (The uptick at levels 15–16 is finite-sample: 256 numbers per cell.)
+- **Walsh spectrum: 1/f, with one real pattern inside.** Total Walsh energy per
+  dyadic level is constant — the 1%/bit law again, now as a spectrum. But
+  within a level the energy is not chi-square flat: masks touching 1–3 bits of
+  n carry ~2× their level's mean energy, masks touching 6–7 bits carry ~0.75×.
+  The residual's dependence on n's bits prefers simple few-bit interactions.
+  This is the only deviation from pure noise found so far, and it is unexplained.
+- **Total base-2/base-3 asymmetry.** Variance explained per digit of n,
+  overfit-corrected (a k-digit fit on m samples explains #classes/m spuriously —
+  uncorrected, the 3^12 fit shows a fake 11.1%): binary digits carry **1.00%**
+  each, twelve digits deep; ternary digits carry **0.00%**, twelve digits deep.
+  The trajectory reads n in base 2 and is blind to base 3 — which is the
+  heuristic *reason* the problem is hard: 3n+1 writes in a base the dynamics
+  never reads.
+
 ## Where this leaves it
 
 Every arithmetic filter on n leaves the picture standing. That's the main
@@ -208,18 +234,21 @@ scale. That's the current floor.
 
 ### Threads not pulled
 
-- **Depth in the tree as the y axis.** Distance from 1 along odd steps, instead
-  of raw step count. The one axis never tried, and the only one that might not
-  just reproduce the same lattice.
+- **Explain the popcount excess.** Why do few-bit Walsh masks carry double
+  weight? It's the one measured deviation from an ideal cascade. A guess worth
+  testing: low-popcount masks are the smooth functions of n, and the first few
+  trajectory steps depend on n through arithmetic (carries), not raw bit
+  patterns.
 - **Per-octave antichains** — build one inside each octave rather than one
   global, so the top of the range can't eat everything below it. Would give a
   fair "each trajectory once" picture at every scale.
-- **Is the final residual actually structureless?** Partially answered by the
-  postscript: it carries exactly 1% of its variance per bit of n, dyadically
-  self-affine. What remains open is the other 84% — the part *not* explained by
-  the first 16 bits. Autocorrelation in n, and whether the per-level increments
-  are themselves patterned or coin-flip, are still unchecked.
 - **Identify the residual law.** The `√log n` scaling suggests a random-walk
-  limit; the visible right skew suggests it isn't Gaussian.
+  limit; the visible right skew suggests it isn't Gaussian. The increments now
+  look memoryless (postscript 2), so a CLT-style limit is plausible; nobody has
+  fit one.
 - **Identities outside the `(j, B)` scheme.** The 11.1% figure is an upper bound
   on what's irreducible, not a proven floor.
+- (Answered along the way: the residual is *not* structureless — it's a 1%/bit
+  self-affine cascade, memoryless across levels, blind to base 3, with the
+  popcount excess as the one open anomaly. And "tree depth as y" collapses to
+  the tripling count `b`, which is the transform panel 2 already.)
