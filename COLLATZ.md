@@ -252,6 +252,49 @@ forgets its input in one step; the MSB phase drifts by ~1/n per step. The two
 edges of the number are its fastest and slowest clocks, and the hex graph
 displays both.
 
+## Why the machine can't loop (fourth postscript)
+
+The design that started all this: encode a Turing machine in an absurdly large
+number, keep it alive at the MSB edge, build intermediate machines by looping
+the left or right edge. The loop is the part that provably fails, and the
+argument is one line in the idealised case (`tools/collatz_cycles.py`):
+
+> A loop returns the MSB phase to itself, so `a = b·log₂3` for integer `a`
+> halvings and `b` odd steps, so `log₂3` is rational. It isn't. No loops.
+
+**The `+1` is the only thing that rescues loops from that**, and it rescues
+them by exactly O(1/n). Measured: each `3n+1` overshoots `3n` in phase by
+`0.48090/n` per odd step, against the theoretical `1/(3 ln 2) = 0.48090`. So
+the real closure condition is `a − b·log₂3 = D` with `D ≈ 0.481·b/n` — nonzero,
+so no contradiction, which is why the conjecture is open rather than trivial.
+(The trivial cycle `1→4→2→1` is the extreme case: at n = 1 the slack is 100%,
+and the convergent 2/1 licenses loops up to n ≈ 1.16. It closes at exactly the
+one value where the argument has no force.)
+
+Since best approximations obey `|a/b − log₂3| ~ 1/b²`, closing a loop around a
+value n needs **b ≈ 1.44·√n** odd steps:
+
+| tape | loop period | tape rewrites during one loop |
+|---|---|---|
+| 68-bit | 2.5×10¹⁰ | 5.8×10⁸ |
+| 100-bit | 1.6×10¹⁵ | 2.6×10¹³ |
+| 1000-bit | 4.7×10¹⁵⁰ | 7.5×10¹⁴⁷ |
+
+So every gadget's period is exponential in the tape it loops — gadgets can
+never be composed — and the halvings rewrite that tape astronomically many
+times during a single period, so nothing survives to be looped anyway. Scale
+makes it worse, which inverts the design's core premise.
+
+Cross-check that this is the standard argument and not a private one: applied
+at the verification frontier 2^68 it gives a minimum cycle period of 2.5×10¹⁰,
+against Eliahou's 1993 bound of ~1.7×10¹⁰. Same order, same continued fraction.
+
+**The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
+mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
+loop because it forgets its input in a single step (the memoryless hash of
+postscript 2). The slowest clock in the system and the fastest, refusing for
+completely independent reasons.
+
 ## Where this leaves it
 
 Every arithmetic filter on n leaves the picture standing. That's the main
