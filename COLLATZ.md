@@ -247,6 +247,17 @@ the orbit coding of a pure circle rotation, perturbed only by the +1's
   (77031 recovered as 77148, 0.15% error, from 40 rows). Only the magnitude:
   the low bits stay hidden, as the noise probes require.
 
+**The edge is a line, and its angle is universal.** The MSB column is exactly
+`m_r = floor(log₂n₀ + r·log₂3 + drift)` — the halvings are integers, so they
+fall straight out of the floor and cancel. Every trajectory's left edge is
+therefore the *same* line of slope `log₂3 = 1.58497` columns per row,
+regardless of n, staying inside a 1-column band of it forever (measured max
+deviation 0.94–1.10 columns across n from 27 to 10^15). What n sets is only
+the sub-column phase — which rows take the wide step. It is literally
+Bresenham line rasterisation of an irrational slope, and the growth pattern is
+quasi-periodic for exactly the reason a rational slope would have been
+periodic (`images/collatz-edge-line.png`).
+
 This is the sharpest form of the session's forgetting hierarchy: the LSB
 forgets its input in one step; the MSB phase drifts by ~1/n per step. The two
 edges of the number are its fastest and slowest clocks, and the hex graph
