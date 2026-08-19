@@ -321,6 +321,27 @@ any right-side loop and the script hands you the carrier: it is always
 integer is the separate condition, and it is the same wall. Of 340 prescribed
 loops up to 4 odd steps, exactly one positive integer appears — n = 1.
 
+**When is the edge slope rational? Exactly when it loops — and for a single
+step, only at n = 1** (`tools/collatz_rational.py`). The per-step slope with the
+`+1` included is `log₂3 + log₂(1 + 1/(3n)) = log₂((3n+1)/n)`. Demand it be
+rational: `(3n+1)^q = 2^p·n^q`. Any prime `r | n` divides the right side, hence
+`3n+1`; but `r | 3n`, so `r | 1`. Contradiction — **n = 1**, where the slope is
+`log₂4 = 2` exactly. Searched to 2×10⁵: no other solution. The drift term alone
+is starker still: `log₂((3n+1)/(3n))` rational would need `3n | 1`, so it is
+irrational for *every* n without exception.
+
+Over a window of k odd steps from odd `n₀` to odd `n_k` with A halvings, the
+advance is `log₂(2^A·n_k/n₀)`; a rational power of 2 that is itself rational
+must be an integer power, so `n_k = n₀`. Hence at every window length:
+
+> edge advance rational ⟺ advance is a whole number of columns ⟺ a cycle
+
+which makes the original intuition exact in *both* directions. "If it looped,
+the left edge would be rational" is true, and so is the converse: nothing short
+of a genuine cycle ever makes the left edge commensurable with the grid.
+Empirically, across 277,607 non-closing windows the advance never came within
+0.00085 of an integer.
+
 **The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
 mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
 loop because it forgets its input in a single step (the memoryless hash of
