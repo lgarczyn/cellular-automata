@@ -300,6 +300,27 @@ Cross-check that this is the standard argument and not a private one: applied
 at the verification frontier 2^68 it gives a minimum cycle period of 2.5×10¹⁰,
 against Eliahou's 1993 bound of ~1.7×10¹⁰. Same order, same continued fraction.
 
+**Can the left edge be influenced at all?** Yes — and `1 → 4 → 2 → 1` is the
+proof (`tools/collatz_halfmachine.py`). A pure `×3` advances the MSB edge by
+`log₂3 = 1.58496` columns; `3·1+1 = 4` advances it by exactly 2. The `+1`
+supplied `log₂(4/3) = 0.41504`, precisely the deficit `2 − log₂3`. The phase
+landed on an integer and the loop closed.
+
+But that influence is `log₂(1 + 1/(3n))` ≈ `0.481/n` per step, fixed by the
+number's **magnitude**, not its bits — so the tape cannot modulate it. It works
+at n = 1 because there the LSB *is* the MSB: a right-edge event moves the left
+edge undiluted. At n = 2^32 it is 10^-10. The attenuation factor is exactly the
+size of the tape you wanted.
+
+**And a "half machine" — looping right side, free left edge — is fully solved,
+classically.** The parity-vector map is a homeomorphism of the 2-adic integers
+conjugating the Collatz map to the plain shift (Lagarias 1985), so *every*
+periodic parity sequence is realised by exactly one 2-adic number. Prescribe
+any right-side loop and the script hands you the carrier: it is always
+`C/(2^a − 3^b)`. The right side loops perfectly in all cases; being a positive
+integer is the separate condition, and it is the same wall. Of 340 prescribed
+loops up to 4 odd steps, exactly one positive integer appears — n = 1.
+
 **The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
 mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
 loop because it forgets its input in a single step (the memoryless hash of
