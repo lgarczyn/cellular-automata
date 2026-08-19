@@ -366,6 +366,34 @@ bootstrap needs that ratio above 1. It isn't, and it can't be tuned.
 So "not self-sustaining" has a precise form: a half machine isn't impossible,
 it's a fuse. It burns at one bit per step, and the fuse is the tape.
 
+**The CA frame, which is the right one** (`tools/collatz_glider.py`). Every
+argument above treats the whole row — the number n — as the machine state. That
+turns the question into number theory and misses what a cellular automaton is:
+a row is the *universe*, and a machine is a **localized pattern**, like a glider
+in Rule 110 (also in this repo, universal precisely because its gliders collide
+in controlled ways). So: does this CA have gliders?
+
+No, and the proof is short. The all-ones 2-adic background is stable
+(`3·(−1)+1 = −2`, halve once, back to −1). Inject a localized defect. Two states
+differing only in high bits agree on their low bits, hence on their halving
+count v, so the difference obeys **exactly**
+
+> `d → 3d / 2^v`
+
+The perturbation dynamics is *linear*, and it is multiplication by 3. Since `3d`
+always needs `log₂3` more bits than `d`, the only bounded orbit is `d = 0`.
+Verified: the linear law held in every trial, **no** bounded support among all
+4095 defect patterns up to 12 bits wide, and a measured spread rate of 1.583
+cells/step against `log₂3 = 1.58496`.
+
+So this CA has a speed of light equal to `log₂3`, and every disturbance travels
+at exactly it — nothing propagates while keeping its shape. That is a far
+simpler and stronger obstruction than any of the Diophantine arguments: gliders
+don't exist, so there is nothing to collide, so there is no computation to
+build, whatever the numbers do. Rule 110's ether by contrast supports defects
+that translate *without* spreading, and that difference — dispersion-free
+propagation — is exactly what separates a universal CA from this one.
+
 **The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
 mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
 loop because it forgets its input in a single step (the memoryless hash of
