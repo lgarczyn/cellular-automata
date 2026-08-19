@@ -342,6 +342,30 @@ of a genuine cycle ever makes the left edge commensurable with the grid.
 Empirically, across 277,607 non-closing windows the advance never came within
 0.00085 of an integer.
 
+**Half machines exist — and they are fuses** (`tools/collatz_halfrun.py`). A
+half machine is not a cycle: it is a gadget whose *low-order* behaviour is
+periodic (a prescribed, repeating halving pattern) while the value grows
+without bound and the MSB edge marches off. One edge loops, one does not.
+
+They are easy to build. The canonical one is the all-ones tape `n = 2^d − 1`,
+which sustains one halving per odd step — the minimum, hence the fastest
+growth — because after j steps its value is `3^j·2^(d−j) − 1`, odd exactly
+while `d − j ≥ 1`. It runs **exactly d steps**, grows by `(3/2)^d`, and stops.
+
+That bound is general. Every odd step costs at least one halving, i.e. one bit
+off the right edge, and the first k parity decisions depend only on `n mod 2^k`
+— so d bits of tape buy at most d steps of prescribed behaviour, for any
+pattern. Measured across patterns, total halvings consumed always lands at the
+tape length.
+
+The machine does grow, from d bits to `d·log₂3` bits. But the bits it gains are
+carries, fixed by arithmetic, not chosen. The exchange rate is
+**log₂3 − 1 = 0.58496** undesigned bits gained per designed bit spent, and a
+bootstrap needs that ratio above 1. It isn't, and it can't be tuned.
+
+So "not self-sustaining" has a precise form: a half machine isn't impossible,
+it's a fuse. It burns at one bit per step, and the fuse is the tape.
+
 **The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
 mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
 loop because it forgets its input in a single step (the memoryless hash of
