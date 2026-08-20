@@ -654,6 +654,38 @@ loop because it forgets its input in a single step (the memoryless hash of
 postscript 2). The slowest clock in the system and the fastest, refusing for
 completely independent reasons.
 
+## Patching crystals together: you always can, and it never holds
+
+The obvious objection is combinatorial: there are infinitely many looping
+patterns, so surely two of them agree somewhere and can be spliced. That is
+right, and the splice is easy to find — searching all 1,864,135 cycle states of
+a W=24 ring turns up **5,424** whose configuration genuinely shows two
+different non-constant crystals side by side, for example
+
+```
+##.##.##.#.#.#..........      period-3 block | period-2 block | empty
+```
+
+which is a real cycle state with period 240. So patching is not the obstacle,
+and "do two patterns share a column" was never the right question: *every* bit
+string is a valid state, and in a finite invertible system every state is on a
+cycle. Two-crystal configurations exist in abundance.
+
+What fails is that the splice is not **preserved**. Watch that state's orbit
+(`images/collatz-patchwork.png`) and the two domains survive exactly one step,
+the next 238 are structureless, and the clean two-crystal picture reassembles
+only when the orbit closes at t=240. The configuration recurs; the structure
+does not persist.
+
+The reason is the one constant behind everything here. The invariant subspaces
+of this dynamics are the **CRT components** — global, spectral, one per divisor
+— and never spatial regions. A spatial decomposition is not something the map
+respects, so "crystal here, crystal there" is a description that erodes at
+`log₂3` from each wall, whatever pieces you build it from. Domains have a
+lifetime of about `width / 1.58` steps, and then the orbit carries on for its
+full period, which may be astronomically longer, before the picture happens to
+reassemble.
+
 ## Is it Rule 90? No — it is Rule 60 with carries
 
 (`images/collatz-rule60.png`.) Multiplication by 3 is multiplication by the
