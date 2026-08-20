@@ -698,6 +698,56 @@ each rendered for exactly three complete periods with the loop boundaries
 marked, no seed transient — one uniform texture per structure, which is exactly
 the constraint.
 
+**That last claim is wrong, and the next section is the retraction.**
+
+## AAB, ABBA, AABB — the sectioning does exist (correction)
+
+(`tools/collatz_subpatterns.py`, `images/collatz-subpatterns.png`.)
+
+The search above asked whether *every* state of an orbit splits into ≥2
+different **internally periodic** sections. Answering "no" to that, I then
+asserted the much stronger thing — that a unit cell can never hold internal
+sectioning at all, because the only blocks fixed by `X → 3X mod (2^P − 1)` are
+trivial. The gap in the argument: a block does not have to be *fixed* for a
+sectioning to persist. `A` and `B` can both churn while remaining equal to each
+other, and that is what actually happens.
+
+The pipeline that found it: take the 100 most heavily factorable windows
+`W ∈ 8..144`; enumerate every loop of period ≤ 64 (a state has period dividing
+`T` iff it is a multiple of `M/gcd(M, 3^T − 1)` — exact enumeration, not
+sampling, which never lands on a short cycle); crop each loop to its minimal
+unit in time *and* space; rotate so the numerically lowest row comes first;
+collapse duplicates; then read the first row as `k` equal blocks and see what
+word they spell.
+
+```
+scanned 53,609 loops -> 25,552 distinct after cropping/canonicalising
+1,939 of them (about 1 in 13) have a first row of the AAB / ABBA kind
+157 distinct block words, 79 with no empty block
+```
+
+Literal examples, all with every block non-empty:
+
+| window | cell | period | word | first row |
+|---|---|---|---|---|
+| 126 | 18 | 36 | `AAB` | `#.#.## #.#.## .#....` |
+| 140 | 20 | 8 | `AABB` | `..### ..### ##... ##...` |
+| 144 | 12 | 12 | `ABBA` | `#.. .#. .#. #..` |
+| 90 | 30 | 30 | `ABBCC` | `.######.##..#.##..#.....#.....` |
+| 120 | 60 | 24 | `AABCCD` | six blocks of ten, four distinct |
+
+And it survives the orbit rather than holding for one row: `AAB` at `W=126`
+still has block structure in **31 of its 36 rows**, `AABB` in 6 of 8, `ABBCC` in
+10 of 30. Others (`ABCDD`, `ABCA`) really do hold for a single row only — both
+behaviours are there, which is precisely what a blanket "cannot be held" denied.
+
+A second thing falls out. The most redundant words have an *empty* repeated
+block: `AABBBB` at `W=126` is `##.##.............` — a six-cell blob with twelve
+cells of vacuum inside its own unit cell, persisting forever. That does not
+contradict `collatz_domains.py` (which measured cells empty across a *whole
+orbit*, and found runs of one) but it does mean the per-row picture is far less
+uniform than "no vacuum anywhere" suggested.
+
 ## Patching crystals together: you always can, and it never holds
 
 The obvious objection is combinatorial: there are infinitely many looping
