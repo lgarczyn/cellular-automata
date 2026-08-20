@@ -583,6 +583,30 @@ two patterns but a genuinely new texture — the singles are clean diagonals and
 stripes, and the pairs come out as houndstooth and herringbone weaves. Every one
 is exactly periodic and persists forever.
 
+**Two crystals side by side, with a wall — exhaustively impossible**
+(`tools/collatz_domains.py`). The persistent states can be *enumerated exactly*
+rather than sampled: a state has period dividing T precisely when
+`(3^T − 1)x ≡ 0 mod M`, i.e. when it is a multiple of `M/gcd(M, 3^T − 1)`. Take
+T to be the lcm of every achievable period and that lists every state on a cycle
+— the complete population of things that persist at all.
+
+For each one, take the union of its support over its whole orbit; cells outside
+that union are permanently empty, and are the only places a wall could live:
+
+| ring | cycle states (all of them) | longest permanent vacuum |
+|---|---|---|
+| W = 20 | 349,525 | **1 cell** |
+| W = 24 | 1,864,135 | **1 cell** |
+
+One cell, across every persistent structure that exists in these rings. Some
+*are* genuinely inhomogeneous — local periodicity varies around the ring, and
+some look like a compact blob in a sea of zeros that grows and snaps back — but
+the empty cells always arrive as isolated holes inside a pattern
+(`##.###.###.###`), never as a region. Juxtapose two crystals by hand and the
+wall radiates on the very first step, with no nearby persistent state to relax
+into, because every persistent state is spread across the entire ring by
+construction.
+
 **But that is superposition, not adjacency.** Two different questions, opposite
 answers (`images/collatz-twostructures.png`).
 
