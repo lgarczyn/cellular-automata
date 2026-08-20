@@ -487,6 +487,41 @@ ring tripling while another part halves, because tripling is not something a
 part can do. A machine needs many independent control decisions per step; this
 universe offers exactly one.
 
+**The bulk: order without signals** (`tools/collatz_bulk.py`,
+`images/collatz-bulk.png`). The ring is a simulation *window*, not the
+universe — periodic boundaries for studying the bulk of a much larger
+automaton. The halving happens at the LSB, far outside the window; from inside
+you only see `×3` with carries plus a uniform drift. So the branchless ring
+isn't a degenerate case, it is the correct bulk model — and it is the one with
+the rich structure.
+
+**Crystal phases exist.** In a ring of size W, states of spatial period `p | W`
+are *exactly* invariant under `×3`: such a state is `X·(2^W−1)/(2^p−1)`, and
+tripling gives `3X mod (2^p − 1)` in the same form. Verified for p = 3, 5, 6, 8
+over 300 steps each. These are the CRT components seen as spatial order rather
+than algebra — one ordered phase per divisor of W, each an invariant subring,
+each persisting forever. That is real, indefinite memory, and the first
+positive structural result in the whole machine thread.
+
+**But there are no quasiparticles.** Put two phases side by side and the domain
+wall between them does not hold together:
+
+| step | domain wall | 1-bit defect |
+|---|---|---|
+| 4 | 2 | 4 |
+| 16 | 19 | 13 |
+| 64 | 101 | 54 |
+| 199 | ~113 | ~125 |
+
+Both disperse at the same rate and saturate near W/2. The wedges in the figure
+are light cones, not trajectories.
+
+So the medium supports **order but not signals**. You can build a region that
+remembers a state indefinitely, but nothing can be sent from one region to
+another, because every disturbance spreads at `log₂3` rather than travelling.
+Storage without communication — the one combination that cannot be assembled
+into a machine.
+
 **The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
 mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
 loop because it forgets its input in a single step (the memoryless hash of
