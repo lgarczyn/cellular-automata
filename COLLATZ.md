@@ -574,8 +574,17 @@ every prime `q | P`, so P is minimal. So the medium is
 not poor in structure — it is extraordinarily rich in it. What it lacks,
 still, is any way for two structures to interact.
 
-**Can two persistent structures share one window?** Two different questions,
-opposite answers (`images/collatz-twostructures.png`).
+**Yes — the short-period structures share a window freely, and combine into new
+ones** (`images/collatz-gallery.png`). Superposition between components is just
+addition, so any set of them can occupy the same cells at once, and the joint
+period is the lcm: `5 + 7` → 12, `11 + 13` → 15, `5 + 11` → 20, `7 + 11` → 30,
+`5 + 11 + 13` → 60. Because the sum carries, the result is not an overlay of the
+two patterns but a genuinely new texture — the singles are clean diagonals and
+stripes, and the pairs come out as houndstooth and herringbone weaves. Every one
+is exactly periodic and persists forever.
+
+**But that is superposition, not adjacency.** Two different questions, opposite
+answers (`images/collatz-twostructures.png`).
 
 **Superposed — yes, perfectly.** Two phases occupying the *same cells* but
 different CRT components coexist with exactly zero cross-talk, verified over 200

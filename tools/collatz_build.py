@@ -168,6 +168,57 @@ def order_big(a, m):
     return o
 
 
+def gallery(images):
+    """Short-period structures alone and superposed - they share a window freely."""
+    Wg = 120
+    Mg = (1 << Wg) - 1
+
+    def mk(p, d):
+        Mp = (1 << p) - 1
+        o = Mp // d
+        return ((o * pow(o, -1, d)) % Mp) * (Mg // Mp) % Mg
+
+    def period(x):
+        k, y = 1, (3 * x) % Mg
+        while y != x and k < 20000:
+            y = (3 * y) % Mg
+            k += 1
+        return k
+
+    def strip(x, T):
+        rows = []
+        for _ in range(T):
+            rows.append([(int(x) >> i) & 1 for i in range(Wg)])
+            x = (3 * int(x)) % Mg
+        return np.array(rows)
+
+    spatial = {5: 4, 7: 3, 11: 10, 13: 12}
+    combos = [(5,), (7,), (13,), (11,), (5, 7), (5, 13), (7, 13), (11, 13),
+              (5, 11), (7, 11), (5, 7, 13), (5, 11, 13)]
+    colours = ["#7ee6a0", "#4fd1ff", "#ffb347", "#ff5c8a", "#c9a0ff", "#8fe36a",
+               "#ffd166", "#6ad7d7", "#ff9f6a", "#a0e7ff", "#f2a0ff", "#b5e853"]
+
+    print()
+    print("short-period structures superposed - the period is the lcm:")
+    fig, axs = plt.subplots(3, 4, figsize=(23, 13), dpi=145)
+    for ax, cs, colour in zip(axs.ravel(), combos, colours):
+        x = 0
+        for d in cs:
+            x = (x + mk(spatial[d], d)) % Mg
+        T = period(x)
+        print("   %-14s period %3d" % (" + ".join(map(str, cs)), T))
+        ax.imshow(strip(x, 60), cmap=ListedColormap(["#0b0b14", colour]),
+                  aspect="auto", interpolation="nearest")
+        ax.set_title("%s   ->  period %d" % (" + ".join(map(str, cs)), T), fontsize=12)
+        ax.set_xticks([])
+        ax.set_yticks([])
+    fig.suptitle("short-period structures, alone and superposed - a 120-cell window, x3 dynamics",
+                 fontsize=16)
+    fig.tight_layout()
+    fig.savefig(os.path.join(images, "collatz-gallery.png"), facecolor="white")
+    plt.close(fig)
+
+
 def long_variant(images):
     """A short and a long structure in one ring: W = 635 = 5 x 127."""
     Wl = 635
@@ -240,6 +291,7 @@ def main():
         print("   p = %-4d period %-40d (%.3g%s)"
               % (p, o, o, ", 3 is a primitive root" if o == Mp - 1 else ""))
 
+    gallery(images)
     long_variant(images)
 
     steps = 60
