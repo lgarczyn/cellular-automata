@@ -574,6 +574,33 @@ every prime `q | P`, so P is minimal. So the medium is
 not poor in structure — it is extraordinarily rich in it. What it lacks,
 still, is any way for two structures to interact.
 
+**Can two persistent structures share one window?** Two different questions,
+opposite answers (`images/collatz-twostructures.png`).
+
+**Superposed — yes, perfectly.** Two phases occupying the *same cells* but
+different CRT components coexist with exactly zero cross-talk, verified over 200
+steps. It is trivially exact: each is `≡ 0` mod every component of the other, so
+neither is visible to the other at all. That is why their periods simply lcm
+together. You can stack as many as W has divisors, all persisting forever.
+
+**Side by side — no.** Two crystal chunks placed in *separate cells* (a
+period-5 block in cells 0–120, a period-7 block in 320–440) both radiate from
+their edges immediately and stop being separable by **step 118**, after which
+there is one merged mess. The bottom panel is two light cones opening until they
+collide.
+
+So the medium separates **spectrally but not spatially**, and each half of that
+kills computation in its own way:
+
+- the spectral channels are *too* independent — components never mix under a
+  multiplicative map, so there are no gates, only parallel non-interacting clocks
+- the spatial dimension is *too* coupled — everything mixes at `log₂3`, so there
+  are no wires
+
+A machine needs parts that are separate *and* can be made to interact. Here
+separateness and interaction are mutually exclusive: anything that can touch
+dissolves, and anything that persists can never touch.
+
 **The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
 mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
 loop because it forgets its input in a single step (the memoryless hash of
