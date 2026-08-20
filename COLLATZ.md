@@ -522,6 +522,48 @@ another, because every disturbance spreads at `log₂3` rather than travelling.
 Storage without communication — the one combination that cannot be assembled
 into a machine.
 
+**Building structures to order** (`tools/collatz_build.py`,
+`images/collatz-structures.png`). In the bulk, a spatial-period-p state is
+exactly invariant and evolves as `x → 3x mod (2^p − 1)`, so its temporal period
+is fully determined by which CRT components are switched on:
+
+> `period(x) = lcm{ ord_d(3) : d a prime power dividing 2^p − 1, x ≢ 0 mod d }`
+
+Which turns structure-building into shopping from a parts catalogue. A W = 60
+ring stocks components 5, 7, 11, 13, 25, 31, 41, 61 with orders 4, 6, 5, 3, 20,
+30, 8, 10 — so short periods are picked off the shelf. Each of these was
+constructed and then **verified by running the automaton**:
+
+| period | spatial p | component |
+|---|---|---|
+| 3 | 12 | 13 |
+| 4 | 4 | 5 |
+| 5 | 10 | 11 |
+| 6 | 3 | 7 |
+| 8 | 20 | 41 |
+| 10 | 60 | 61 |
+| 20 | 20 | 25 |
+| 30 | 5 | 31 |
+
+Switch every component of a phase on at once and periods compound by lcm:
+spatial 20 → 120, spatial 60 → **6600**.
+
+The long end needs no construction at all. If `2^p − 1` is a Mersenne prime
+there is only one component, so *every* nonzero state of that phase is maximal:
+
+| p | period |
+|---|---|
+| 31 | 715,827,882 |
+| 61 | 2.56 × 10¹⁷ |
+| **89** | **6.19 × 10²⁶** — 3 is a primitive root, the entire group |
+| 107 | 1.62 × 10³² — primitive root |
+| 127 | 5.67 × 10³⁷ |
+
+An 89-cell-wide patch of this automaton cycles with period 6.19 × 10²⁶, and all
+6.19 × 10²⁶ of its nonzero states lie on that single orbit. So the medium is
+not poor in structure — it is extraordinarily rich in it. What it lacks,
+still, is any way for two structures to interact.
+
 **The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
 mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
 loop because it forgets its input in a single step (the memoryless hash of
