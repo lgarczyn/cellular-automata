@@ -168,6 +168,45 @@ def order_big(a, m):
     return o
 
 
+def long_variant(images):
+    """A short and a long structure in one ring: W = 635 = 5 x 127."""
+    Wl = 635
+    Ml = (1 << Wl) - 1
+    short = Ml // ((1 << 5) - 1)          # spatial period 5,   temporal 30
+    long_ = Ml // ((1 << 127) - 1)        # spatial period 127, temporal 5.67e37
+    P = 56713727820156410577229101238628035242
+    M127 = (1 << 127) - 1
+    print()
+    print("a long variant, in the same ring as a short one (W = 635 = 5 x 127):")
+    print("   3^P = 1 mod 2^127-1 : %s" % (pow(3, P, M127) == 1))
+    print("   and minimal - 3^(P/q) != 1 for every prime q | P")
+    print("   superposing both phases gives lcm(30, P) = %d" % lcm(30, P))
+
+    def strip(x, T):
+        rows = []
+        for _ in range(T):
+            rows.append([(int(x) >> i) & 1 for i in range(Wl)])
+            x = (3 * int(x)) % Ml
+        return np.array(rows)
+
+    T = 380
+    panels = [(strip(short, T), "spatial period 5  ->  temporal period 30", "#7ee6a0"),
+              (strip(long_, T), "spatial period 127 ->  temporal period 5.67 x 10^37", "#ffb347"),
+              (strip((short + long_) % Ml, T), "both phases live at once ->  period 2.84 x 10^38", "#ff5c8a")]
+    fig, axs = plt.subplots(3, 1, figsize=(19, 17), dpi=150)
+    for ax, (im, title, colour) in zip(axs, panels):
+        ax.imshow(im, cmap=ListedColormap(["#0b0b14", colour]), aspect="auto",
+                  interpolation="nearest")
+        ax.set_title(title, fontsize=14)
+        ax.set_ylabel("step")
+    axs[-1].set_xlabel("ring cell (W = 635 = 5 x 127)")
+    fig.suptitle("same 635-cell bulk: a 30-step structure and a 10^37-step structure",
+                 fontsize=16)
+    fig.tight_layout()
+    fig.savefig(os.path.join(images, "collatz-longvariant.png"), facecolor="white")
+    plt.close(fig)
+
+
 def main():
     random.seed(1)
     images = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "images")
@@ -200,6 +239,8 @@ def main():
         o = order_big(3, Mp)
         print("   p = %-4d period %-40d (%.3g%s)"
               % (p, o, o, ", 3 is a primitive root" if o == Mp - 1 else ""))
+
+    long_variant(images)
 
     steps = 60
     fig, axs = plt.subplots(2, 4, figsize=(22, 9), dpi=145)

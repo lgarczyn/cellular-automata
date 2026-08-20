@@ -560,7 +560,17 @@ there is only one component, so *every* nonzero state of that phase is maximal:
 | 127 | 5.67 × 10³⁷ |
 
 An 89-cell-wide patch of this automaton cycles with period 6.19 × 10²⁶, and all
-6.19 × 10²⁶ of its nonzero states lie on that single orbit. So the medium is
+6.19 × 10²⁶ of its nonzero states lie on that single orbit.
+
+A long variant rendered next to a short one in the *same* ring
+(`images/collatz-longvariant.png`, W = 635 = 5 × 127): the period-30 phase is a
+clean woven diagonal that visibly repeats inside the window, while the
+period-5.67 × 10³⁷ phase looks like pure noise and repeats no row at all across
+380 steps. Both are exactly periodic and exactly invariant; the difference is
+only which component is live. Superposed, the two phases coexist without
+interacting and the period is `lcm(30, P) = 2.84 × 10³⁸`. The long period was
+verified rather than assumed: `3^P ≡ 1 mod 2^127−1`, and `3^(P/q) ≢ 1` for
+every prime `q | P`, so P is minimal. So the medium is
 not poor in structure — it is extraordinarily rich in it. What it lacks,
 still, is any way for two structures to interact.
 
