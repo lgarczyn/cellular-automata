@@ -654,6 +654,39 @@ loop because it forgets its input in a single step (the memoryless hash of
 postscript 2). The slowest clock in the system and the fastest, refusing for
 completely independent reasons.
 
+## Is it Rule 90? No — it is Rule 60 with carries
+
+(`images/collatz-rule60.png`.) Multiplication by 3 is multiplication by the
+polynomial `(1 + x)` evaluated at `x = 2`. **Rule 60 is multiplication by that
+same polynomial over GF(2)** — `x'_i = x_i XOR x_{i-1}`. Identical algebra; the
+only difference is whether `1 + 1` carries or wraps to zero.
+
+From a one-cell seed the two agree for exactly one step and then part company:
+
+| step | ×3 with carries | rule 60 |
+|---|---|---|
+| 1 | `11` | `11` |
+| 2 | `1001` | `101` |
+| 3 | `11011` | `1111` |
+
+Rule 60 gives Pascal's triangle mod 2 — a clean Sierpinski gasket. `×3` gives
+Pascal's triangle *with carries*, which is a melted Sierpinski: the same
+triangular envelope and the same ghostly nested voids, but the fine structure
+churned into pseudorandomness.
+
+And the light-cone speeds place it exactly:
+
+| rule | polynomial | speed |
+|---|---|---|
+| rule 60 | `1 + x` over GF(2) | **1.000** |
+| **×3 with carries** | `1 + x` over **Z** | **1.586** = log₂3 |
+| rule 90 | `x + 1/x` over GF(2) | **2.000** |
+
+So the medium sits strictly between the two classic linear rules, and `log₂3`
+— the constant behind the quasicrystal, the Pythagorean comma, the machine's
+failure to loop, and the erosion rate of every crystal domain — is simply what
+the carry does to Rule 60's speed of light.
+
 ## Where this leaves it
 
 Every arithmetic filter on n leaves the picture standing. That's the main
