@@ -394,6 +394,33 @@ build, whatever the numbers do. Rule 110's ether by contrast supports defects
 that translate *without* spreading, and that difference — dispersion-free
 propagation — is exactly what separates a universal CA from this one.
 
+**Looping universes** (`tools/collatz_loopworlds.py`,
+`images/collatz-loopworlds.png`). On a line the machine dies of fuel. Close the
+universe into a ring and the MSB edge wraps instead of escaping — which also
+dissolves the half/full machine distinction, since a left edge that cannot
+march off is a left edge that loops. Three rings, by how a carry leaves the top
+and returns: **plain** (mod 2^W), **cyclic** (end-around carry, mod 2^W − 1),
+**negacyclic** (end-around borrow, mod 2^W + 1).
+
+All three work and all three are degenerate. Non-trivial cycles appear
+sporadically — a 90-cycle at W=13 cyclic, 63 at W=11 — but grow *rarer* with W,
+and by W=17–20 every ring in every topology has collapsed to the trivial
+3-cycle. The cause is exact: only **2/3** of states have a preimage (0.6667 at
+W = 10, 12, 14, 16), so a third of the information is destroyed per step.
+
+The standard fix is Fredkin's second-order construction, remembering the
+previous row: `x[t+1] = f(x[t]) XOR x[t−1]`, invertible since
+`x[t−1] = f(x[t]) XOR x[t+1]`. That universe stays alive — at W=10, 1114
+distinct cycles with the longest 7656 steps, and live-cell density holds (145 →
+137) where the irreversible ring decays (145 → 79).
+
+But it still has no gliders: a single-bit defect opens a light cone — visibly a
+Sierpinski gasket while the dynamics is still in its linear XOR regime — and
+then fills the ring. So each universe fails its own way: **the line runs out of
+fuel, the plain ring loses information, and the reversible ring keeps
+everything but mixes it globally**, leaving no independent parts to compute
+with. Stability was the easy half; locality is the one that never arrives.
+
 **The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
 mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
 loop because it forgets its input in a single step (the memoryless hash of
