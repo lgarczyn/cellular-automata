@@ -1079,6 +1079,135 @@ common tail near 1.
 After peeling: a right-skewed distribution with sd ≈ 5 that is the same at every
 scale. That's the current floor.
 
+## Patterns that spread left: rigid traveling crystals
+
+(`tools/collatz_traveling.py`, `images/collatz-traveling.png`.) Several sections
+above claim every disturbance moves at `log₂3` and nothing keeps its shape. That
+is true of a *defect against a background*, and false in general. There is an
+exact family of shape-preserving traveling waves, and some move **left**, toward
+the MSB.
+
+A crystal with denominator `d` rigidly translates iff **3 is a power of 2 mod
+d**: if `3 ≡ 2^k (mod d)` then `3·(a/d)` and `2^k·(a/d)` differ by an integer, so
+one `×3` step is *exactly* the crystal shifted left by `k` bits. No dispersion,
+no reshaping — a rigid glider of velocity `k` cells/step. Direction is set by
+where `k` sits in `p = ord_d(2)`: `k ≤ p/2` reads as a right shift, `k > p/2` as
+a left shift (`net = k − p`).
+
+```
+d=5   p=4    +3  →  right 1/step
+d=11  p=10   +8  →  right 2/step
+d=13  p=12   +4  →  LEFT  4/step
+d=29  p=28   +5  →  LEFT  5/step
+d=61  p=60   +6  →  LEFT  6/step
+```
+
+58 denominators below 400 translate; they are the shift-eigenvectors of `×3` —
+exactly the `d` for which `dlog₂(3)` exists. `d=13` verified: `000100111011 →
+001110110001 → 101100010011`, each row the previous shifted left 4, returning
+after 3 steps (4·3 = 12 = period). The figure shows the pink exact-velocity line
+tracking the texture in every panel.
+
+**This does not overturn the `log₂3` result — it sits beside it.** A localized
+*perturbation* on any background still disperses at `log₂3`; what travels rigidly
+is the whole periodic crystal, an eigenvector rather than a defect. So the medium
+carries coherent left-moving signals at rational velocity after all — the
+missing ingredient for a machine was never leftward transport, it was a
+*localized* left-mover. Which is exactly the open problem below.
+
+## The localized-left-mover search: settled (negative)
+
+(`tools/collatz_leftsearch.py`, `tools/collatz_leftmover.py`,
+`images/collatz-leftmover.png`.) Ran the big phase search on 16 cores. There is
+**no localized left-mover under the free-MSB bulk**, and the reason is one line
+of linearity that the search confirms exhaustively.
+
+The bulk map `x → 3x` is linear, so the disturbance of a packet on *any*
+background is `state − background = 3ᵗ·e₀`, independent of the background
+entirely. And `3ᵗ·e₀` for a localized `e₀` grows in bit-span at exactly `log₂3`
+per step, forever. The background is irrelevant; no packet, no phase escapes it.
+
+- **77,535 localized packets** (every shape to width 16, plus sparse packets
+  swept over all 210 phases) on a W=210 looping ring, 150 steps: min max-span
+  **203 of 210** — every packet fills the ring. **Zero** stayed within W/4. The
+  most-bounded one reached span 203 in 11 steps.
+- **20,000 random packets** under the true free-MSB edge: bit-span slope
+  **1.5851** (min 1.581, max 1.588) = `log₂3`, every one, no exceptions.
+- The left-movers that *do* exist are the traveling crystals: 2,022 denominators
+  below 20,000, **19.4 million** distinct patterns counting phase, all verified
+  to shift rigidly — and all non-localized (they fill the ring).
+
+So under the free-MSB half-open geometry, the honest picture is:
+**`collatz_leftmover.png`** — a traveling-crystal tail slides left at a rational
+rate `k` and feeds a head that grows left at `log₂3`; that is a real coherent
+left-moving structure, but it is periodic, not a localized glider. A localized
+one is impossible here, provably.
+
+**Where a genuine glider could still hide:** the one nonlinearity we removed to
+get the bulk — the Collatz **parity branch** (`x → 3x+1` or `x/2`). `x → 3x` is
+linear and *cannot* support gliders, full stop; the branched rule is not linear,
+so its perturbations do not obey `3ᵗ·e₀`. That is the search worth the CPU next:
+localized packets under the full branched rule, on the antidiagonal `(digit,
+carry)` CA, not the bulk. Everything above is the bulk; the glider question was
+always really a question about the branch.
+
+## Handoff — for the higher-CPU box
+
+**The live question:** make a *localized* pattern that spreads left — a finite
+wave packet / Rule-110-style glider that moves toward the MSB while staying
+bounded, not the full-ring traveling crystal above and not the `log₂3` light
+cone. Everything learned points at where to look:
+
+1. **Gliders live on ethers, and we only tried vacuum.** Every glider search so
+   far (`collatz_glider.py`) put a defect on the empty or all-ones background and
+   watched it disperse. Rule 110's gliders exist only against its periodic
+   *ether*. The untried search: take a **traveling-crystal background** (say
+   `d=13`, moving left 4/step), add a localized perturbation, co-move the frame
+   with the background, and look for perturbations whose support stays bounded.
+   This is the single most promising avenue and it needs the CPU — it is a search
+   over (background phase × perturbation shape × frame velocity).
+2. **Two traveling crystals of the same velocity superpose freely** (they are
+   CRT-independent if their denominators are coprime, both eigenvectors of the
+   same shift). A packet might be buildable as a *beat* between two left-movers
+   of nearly-equal velocity — a localized envelope on a carrier, standard
+   wave-packet construction. Check whether the envelope disperses or holds.
+3. **Boundary between two co-moving crystals.** The domain-wall result
+   (`collatz_bulk.py`) used *static* phases and the wall dispersed at `log₂3`.
+   Redo it with two crystals of the *same* translation velocity — the wall might
+   now be stationary in the co-moving frame, i.e. a bound left-moving kink.
+4. **The reversible (Fredkin) universe was never searched for gliders against
+   crystal ethers either** — only against vacuum. Same search as (1), in the
+   second-order rule where information is conserved.
+
+**Feedback from Lou, worth carrying forward (the corrections that mattered):**
+- The machine state is *not* a displayed row — the CA's true time-slices are the
+  antidiagonals `t = r+c`, and the carry is genuine state there (the `t = r`
+  "carry is derived" test answered a different question). A proper search may
+  need to work in antidiagonal / 2-bit `(digit, carry)` coordinates, where the
+  state space is larger than the digit-only model used everywhere above.
+- "Don't assume constraints I didn't ask for." The claim that unit cells *must*
+  be uniform textures was false — it came from picking small spatial periods.
+  Large cells (`W=60`, period 10) carry rich structure; `AAB`/`ABBA` block words
+  and true compositions all exist. When a search returns "impossible", suspect
+  the search was too narrow before believing the medium.
+- Persistence ≠ composition. A word that merely closes its orbit is not a
+  composition; a true composition keeps the *period* of its parts. Always report
+  both.
+- Show three full clean loops, cropped to the minimal unit — not the seed
+  transient filling in.
+- Render with **square cells** (aspect 1); vertical stretching destroys the
+  readability of the pattern.
+
+**What's solid (don't re-derive):** the `(a,b)` recipe lattice and its `log₂3`
+quasicrystal; the 2-adic self-affine residual; the machine impossibility for
+*periodic/looping* structures (rational-edge ⟺ cycle; loops need `√n`-length
+timing that the Pythagorean comma forbids); the bulk = `×3` with carries = Rule
+60 with carries, speed `log₂3`; a pattern is a rational `a/d`, persistent iff
+`3∤d`, spatial period `ord_d(2)`, temporal `ord_d(3)`; the concatenation charge
+law; the half-open universe (head = base-3 expansion of the tail's `a/d`); and
+now the traveling crystals. All of this is machinery the glider search can stand
+on.
+
 ### Threads not pulled
 
 - **Explain the popcount excess.** Why do few-bit Walsh masks carry double
