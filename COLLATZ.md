@@ -1151,6 +1151,30 @@ localized packets under the full branched rule, on the antidiagonal `(digit,
 carry)` CA, not the bulk. Everything above is the bulk; the glider question was
 always really a question about the branch.
 
+## Correction: the real (nonlinear) CA was searched, still no glider
+
+(`tools/collatz_glidersearch.py`.) The impossibility above was first argued from
+linearity of `x → 3x`. That is the **bulk value map, not the cellular automaton**
+— a real error. The true CA carries `(digit, carry)` on the antidiagonals
+`t = r+c`, where the update is a full adder and the carry is a **majority** gate,
+nonlinear over GF(2) (verified). The `3ᵗ·e₀` argument does not apply there, so
+gliders are not excluded a priori.
+
+So the real rule was searched: 262,143 localized `(digit,carry)` seeds on vacuum
+(all grow); 142 ethers found by enumerating cycles of the period-`p` CA
+(`p ≤ 8`); **1,310,680 defects** placed exhaustively on the 40 most structured
+ethers, 240 steps each, tracking the difference from the pure-ether evolution.
+**Zero gliders. Zero coherent left-fronts. Max quasi-lifetime 77 steps.**
+
+The structural reason turns on the boundary condition. `×3` grows every structure
+leftward; a bounded left-mover needs **consumption** to balance it. The only
+consumption in Collatz is the halving (LeastEdge eating trailing zeros = `/2`) —
+and that needs **trailing zeros at a terminating right edge**. A *looping* right
+edge (nonzero periodic tail) has none. So under exactly "free MSB + looping
+right" the dynamics is pure `×3`-with-carry, and the search shows it has no
+localized left-mover. The "runners down the right edge" are halvings, which live
+at a *terminating* right edge — the one model not yet searched.
+
 ## Handoff — for the higher-CPU box
 
 **The live question:** make a *localized* pattern that spreads left — a finite
