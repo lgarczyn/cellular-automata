@@ -183,7 +183,7 @@ def figure(A, B, images):
                "#c9a0ff", "#8fe36a", "#ffd166", "#6ad7d7"]
     for ax, k, colour in zip(axs.ravel(), KS, colours):
         p = k * L
-        copies = COPIES
+        copies = max(1, int(round(float(STEPS) / p)))
         W = p * copies
         cell = word(A, B, k)
         letters = "A" * (k - 1) + "B"
@@ -191,7 +191,7 @@ def figure(A, B, images):
         T = period(cell, (1 << p) - 1)
         ax.imshow(spacetime(x, W, STEPS),
                   cmap=ListedColormap(["#0b0b14", colour]),
-                  aspect="auto", interpolation="nearest")
+                  interpolation="nearest")
         for c in range(0, W + 1, L):
             ax.axvline(c - 0.5, color="#ffffff",
                        lw=1.6 if c % p == 0 else 0.6,

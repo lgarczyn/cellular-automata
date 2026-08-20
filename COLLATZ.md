@@ -973,6 +973,67 @@ parts of 126. At `k = 3` only `ABC` survives — three distinct blocks, no repea
 Which is the opposite of the intuition that a repeated block should be the easy
 case: repetition is exactly what stops the defect reaching the new primes.
 
+## Looping right edge, free MSB edge on the left
+
+(`tools/collatz_halfopen.py`, `images/collatz-halfopen.png`.) Give the crystal
+back its MSB edge but keep the right side looping. That configuration — repeats
+forever to the right, terminates on the left — is a **real number**: an integer
+head `H` (bits at positions ≥ 0) plus a repeating binary *fraction*
+`f = X/(2^p−1)`. One step:
+
+```
+3f = q + X'/(2^p−1),   q ∈ {0,1,2}
+tail   X → 3X mod (2^p−1)      (exactly the ring dynamics)
+head   H → 3H + q              (the tail's carry spilling upward)
+```
+
+so the whole configuration at time `t` is just the real number `3ᵗ·f₀` written in
+binary. Everything follows.
+
+**The left edge never touches the right.** In `x → 3x` carries propagate only
+from LSB toward MSB, so the light cone is *one-sided* and the MSB edge is
+downstream of everything. No pattern is ever damaged — not "some survive", all
+of them, forever. The lethal edge is the other one: cut the tail off at depth `D`
+instead of looping it and the truncation eats upward at `log₂3` — measured
+1.5854, 1.5870, 1.5832 cells/step for three crystals. Looping the *right* edge
+was exactly the necessary move; looping the left would have bought nothing.
+
+**The angle is the same for every pattern.** The MSB sits at
+`log₂(3ᵗ f₀) = t·log₂3 + log₂f₀`, so the slope is `log₂3 = 1.5849625` for every
+crystal — ten of them measured, all 1.5848–1.5852. What the pattern sets is the
+*offset*, and it sets it exactly: the intercept is `log₂(a/d)`, the tail's own
+value as a fraction. Verified to twelve digits, `H/3ᵗ → a/d`:
+
+| p | d | a | H/3ᵗ | a/d |
+|---|---|---|---|---|
+| 6 | 7 | 1 | 0.142857142857 | 0.142857142857 |
+| 5 | 31 | 1 | 0.032258064516 | 0.032258064516 |
+| 15 | 151 | 1 | 0.006622516556 | 0.006622516556 |
+| 6 | 7 | 2 | 0.285714285714 | 0.285714285714 |
+
+Different patterns give **parallel** lines — never converging, never crossing.
+
+**And what grows on the left is not chaos.** The carry stream `q₀q₁q₂…` *is* the
+base-3 expansion of `a/d`, digit for digit:
+
+```
+p=6  d=7    carries    010212010212010212010212010212
+            base3(1/7) 010212010212010212010212010212
+p=5  d=31   carries    000212111221020222010111001202
+            base3(1/31)000212111221020222010111001202
+```
+
+So the head is that expansion read as a base-3 numeral — periodic, because the
+tail is rational. The left region only looks like noise because it is being
+rendered in base 2. Draw it in base 3 and it is as ordered as the crystal on the
+right: two crystals, one in each base, with the binary point as the only
+boundary between them.
+
+That also re-derives the machine obstruction in one line. The edge is at
+`t·log₂3 + log₂f₀` for *every* configuration of this kind, so its slope is
+irrational no matter what you put in the tail — no choice of pattern tilts it to
+a rational angle, and without a rational angle the edge cannot close a loop.
+
 ## Is it Rule 90? No — it is Rule 60 with carries
 
 (`images/collatz-rule60.png`.) Multiplication by 3 is multiplication by the

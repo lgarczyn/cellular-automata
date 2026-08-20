@@ -208,7 +208,7 @@ def gallery(images):
         T = period(x)
         print("   %-14s period %3d" % (" + ".join(map(str, cs)), T))
         ax.imshow(strip(x, 60), cmap=ListedColormap(["#0b0b14", colour]),
-                  aspect="auto", interpolation="nearest")
+                  interpolation="nearest")
         ax.set_title("%s   ->  period %d" % (" + ".join(map(str, cs)), T), fontsize=12)
         ax.set_xticks([])
         ax.set_yticks([])
@@ -246,7 +246,7 @@ def long_variant(images):
               (strip((short + long_) % Ml, T), "both phases live at once ->  period 2.84 x 10^38", "#ff5c8a")]
     fig, axs = plt.subplots(3, 1, figsize=(19, 17), dpi=150)
     for ax, (im, title, colour) in zip(axs, panels):
-        ax.imshow(im, cmap=ListedColormap(["#0b0b14", colour]), aspect="auto",
+        ax.imshow(im, cmap=ListedColormap(["#0b0b14", colour]),
                   interpolation="nearest")
         ax.set_title(title, fontsize=14)
         ax.set_ylabel("step")
@@ -300,7 +300,7 @@ def main():
                "#c9a0ff", "#8fe36a", "#ffd166", "#6ad7d7"]
     for ax, (T, p, x), colour in zip(axs.ravel(), made, palette):
         ax.imshow(spacetime(x, steps), cmap=ListedColormap(["#0b0b14", colour]),
-                  aspect="auto", interpolation="nearest")
+                  interpolation="nearest")
         ax.set_title("period %d   (spatial %d)" % (T, p), fontsize=13)
         ax.set_xlabel("ring cell")
         ax.set_ylabel("step")

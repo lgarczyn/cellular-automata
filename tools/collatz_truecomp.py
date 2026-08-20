@@ -220,11 +220,11 @@ def spacetime(cell, p, copies, T):
 def panel(ax, w, L, TW, target, colour, tag):
     k = len(w)
     p = k * L
-    copies = max(1, int(round(80.0 / p)))
+    copies = max(1, int(round(3.0 * TW / p)))   # square panel: cells stay square
     cell = sum(b << (j * L) for j, b in enumerate(w))
     ax.imshow(spacetime(cell, p, copies, 3 * TW),
               cmap=ListedColormap(["#0b0b14", colour]),
-              aspect="auto", interpolation="nearest")
+              interpolation="nearest")
     for c in range(0, p * copies + 1, L):
         ax.axvline(c - 0.5, color="#ffffff",
                    lw=1.6 if c % p == 0 else 0.6,

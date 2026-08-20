@@ -172,7 +172,7 @@ def main():
               (B, "reversible loop: stays alive", "#ffb347"),
               (C, "reversible: a 1-bit defect still fills the ring", "#ff4f7b")]
     for ax, (im, title, colour) in zip(axs, panels):
-        ax.imshow(im, cmap=ListedColormap(["#0b0b14", colour]), aspect="auto",
+        ax.imshow(im, cmap=ListedColormap(["#0b0b14", colour]),
                   interpolation="nearest")
         ax.set_title(title, fontsize=13)
         ax.set_xlabel("ring cell")

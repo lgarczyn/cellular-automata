@@ -249,7 +249,7 @@ def figure(images):
         ax.set_yticks([])
 
     # a legal wall and an illegal one, at L = 9
-    L, W, T = 9, 90, 70
+    L, W, T = 9, 90, 90
     qL, q2 = quota(L), quota(2 * L)
     A = 0b101101101
     good = next(B for B in range(1 << L)
@@ -273,7 +273,7 @@ def figure(images):
     x = (A | (good << L)) * embed
     ax = axs[1][1]
     ax.imshow(spacetime(x, W, T), cmap=ListedColormap(["#0b0b14", "#8fe36a"]),
-              aspect="auto", interpolation="nearest")
+              interpolation="nearest")
     for c in range(0, W + 1, L):
         ax.axvline(c - 0.5, color="#ffffff", lw=0.8, alpha=0.4)
     ax.set_title("A=%s  B=%s   same charge\na permanent wall, period %d"
@@ -287,7 +287,7 @@ def figure(images):
     y = (A | (bad << L)) * embed
     Tc = cycle_length(y)
     rows, z, trans = [], y, 0
-    for t in range(12):
+    for t in range(W):
         w = z
         for _ in range(Tc):
             w = (3 * w) % M
@@ -298,15 +298,14 @@ def figure(images):
         z = (3 * z) % M
     ax = axs[1][2]
     ax.imshow(np.array(rows), cmap=ListedColormap(["#0b0b14", "#ff5c8a"]),
-              aspect="auto", interpolation="nearest")
+              interpolation="nearest")
     for c in range(0, W + 1, L):
         ax.axvline(c - 0.5, color="#ffffff", lw=0.8, alpha=0.4)
     ax.set_title("A=%s  B=%s   different charge\nx_t XOR x_(t+%d): lit = not yet on a "
                  "cycle (%d steps)" % (show(A, L), show(bad, L), Tc, trans), fontsize=11)
     ax.set_xlabel("ring cell (W = 90)")
     ax.set_ylabel("step")
-    ax.set_yticks(range(12))
-    ax.set_yticklabels(range(12), fontsize=7)
+    ax.set_yticks([])
     fig.suptitle("compatibility atlas - which patterns can be laid side by side",
                  fontsize=16)
     fig.tight_layout()

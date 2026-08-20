@@ -118,10 +118,10 @@ def main():
 
     fig, axs = plt.subplots(1, 2, figsize=(18, 9), dpi=150)
     axs[0].imshow(np.array(raw), cmap=ListedColormap(["#0b0b14", "#7ee6a0"]),
-                  aspect="auto", interpolation="nearest")
+                  interpolation="nearest")
     axs[0].set_title("two crystal phases (period 3 | period 5) under x3", fontsize=13)
     axs[1].imshow(np.array(dif), cmap=ListedColormap(["#0b0b14", "#ff5c8a"]),
-                  aspect="auto", interpolation="nearest")
+                  interpolation="nearest")
     axs[1].set_title("deviation from the pure phases: the walls disperse", fontsize=13)
     for ax in axs:
         ax.set_xlabel("ring cell")
