@@ -455,6 +455,38 @@ algebra of the ring hands you exactly the independent parts a machine needs,
 and the parity branch — the thing that makes this Collatz rather than plain
 multiplication — is precisely what destroys them.
 
+**Where do you read the parity on a ring?** (`tools/collatz_branchplace.py`)
+Parity needs a distinguished cell and a ring has none — every cell is
+equivalent under rotation. The ring universes above quietly kept bit 0 as "the
+LSB", so they were never translation-invariant CAs; they were rings with a
+hidden head bolted on.
+
+Worse: **on a ring with end-around carry, halving *is* rotation.** Multiplying
+by 2 is a symmetry (`2^W ≡ 1`, and `inv2` is the back-rotation), so W halvings
+return exactly where they started. The halvings are not dynamics at all, they
+are a period-W clock. All the dynamics lives in the branch.
+
+Trying every placement on the same ring (W = 15 and 21, where `gcd(3, M) = 1`):
+
+| branch read from | orbits | longest |
+|---|---|---|
+| nothing (pure `x→3x+1`) | 4266 | 504 |
+| bit-0 parity (hidden head) | **3** | **3** |
+| popcount parity (rotation-invariant but global) | 49940 | 21 |
+| one CRT component (`x mod 7`) | 44600 | 672 |
+
+The CRT placement is the best of them — the control component runs
+autonomously and drives the rest, a genuine control/registers skew product —
+but the control is only p states wide, so periods stay tiny.
+
+None of it helps, and the reason is structural rather than a bad choice.
+**`3n+1` on a ring is `n + rotate(n)` with carries — a global operation on the
+whole state — so whatever selects it is necessarily global too.** One bit of
+control, for the entire universe, once per step. You cannot have part of the
+ring tripling while another part halves, because tripling is not something a
+part can do. A machine needs many independent control decisions per step; this
+universe offers exactly one.
+
 **The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
 mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
 loop because it forgets its input in a single step (the memoryless hash of
