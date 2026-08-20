@@ -921,6 +921,58 @@ width 40 takes 61 680. Which `k` a pair supports is read straight off `v₃(B−
 `v₃ = 0` keeps only odd `k` (free, since `kL` is then odd and the quota is zero),
 `v₃ = 1` loses `k = 6, 12`, `v₃ ≥ 2` keeps everything up to 12.
 
+### Persistence is not composition (correction)
+
+(`tools/collatz_truecomp.py`, `images/collatz-truecomp.png`.) The `AᵏB` table
+above shows words that *persist*, not words that *compose*. The period explodes
+as blocks are added — 30, 150, 120, 450, 1650, 1 106 280 — while the block `A`
+on its own cycles in 30. Nothing of `A` survives into the composite; the orbit
+merely closes eventually.
+
+There is an exact law for where the blow-up comes from. `x → 3x` is linear, so
+split a word into background plus difference field:
+
+```
+X  =  B₀·(2^{kL}−1)/(2^L−1)  +  Σⱼ (Bⱼ − B₀)·2^{jL}
+      └──── background ────┘     └───── defect D ─────┘
+
+period(X)  |  lcm( period(background), period(D) )
+```
+
+The background is just `B₀` as a crystal, contributing exactly the part's own
+period. **Every bit of the blow-up is the defect field.** So call a word a *true
+composition* when `period(word)` divides the lcm of its distinct blocks' own
+periods — no new frequencies.
+
+Exhaustive over words whose minimal spatial period is genuinely `kL` (a period-3
+crystal chopped into 5-wide pieces is not a composition, and excluding those
+drops the counts by an order of magnitude):
+
+| L | k | genuine words | true compositions | shapes |
+|---|---|---|---|---|
+| 4 | 2, 3 | 30, 66 | 0 | — |
+| 5 | 2 | 310 | **310** | `AB` |
+| 5 | 3 | 32 730 | 180 | `ABC` only |
+| 6 | 2 | 56 | 6 | `AB` |
+| 6 | 3 | 162 | 0 | — |
+| 7 | 2 | 5 334 | **5 334** | `AB` |
+| 7 | 3 | 2 097 018 | 6 090 | `ABC` only |
+
+Two things fall out.
+
+**`AᵏB` never composes truly for `k ≥ 3`** — not at any `L ≤ 16`. The defect is a
+single number `(B−A)·2^{(k−1)L}` with `|B−A| < 2^L`, so `gcd(2^{kL}−1, D) < 2^L`
+and the primitive prime divisors of `2^{kL}−1` — larger than `2^L` at these
+widths — are left live, forcing a period no width-`L` block can match. The shape
+census confirms it: at `k = 3`, `AAB`, `ABA` and `ABB` score zero, every time.
+
+**But true compositions exist, and at `k = 2` can be the entire population.** At
+`L = 5` and `L = 7`, *every* genuine two-block word composes truly; `#.#..|.#.##`
+runs at period 5 while its parts cycle in 30, and `.#.....|#.#####` at 42 against
+parts of 126. At `k = 3` only `ABC` survives — three distinct blocks, no repeat.
+Which is the opposite of the intuition that a repeated block should be the easy
+case: repetition is exactly what stops the defect reaching the new primes.
+
 ## Is it Rule 90? No — it is Rule 60 with carries
 
 (`images/collatz-rule60.png`.) Multiplication by 3 is multiplication by the
