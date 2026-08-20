@@ -421,6 +421,40 @@ fuel, the plain ring loses information, and the reversible ring keeps
 everything but mixes it globally**, leaving no independent parts to compute
 with. Stability was the easy half; locality is the one that never arrives.
 
+**Ring size decides everything — until the parity branch throws it away**
+(`tools/collatz_ringsize.py`, `images/collatz-ringsize.png`). On the cyclic ring
+the modulus is `2^W − 1`, so W controls the arithmetic the universe is built
+from, and the two extremes are dramatic — *for the branchless affine map*
+`x → 3x+1`:
+
+| W | 2^W − 1 | divisors | orbits | longest orbit |
+|---|---|---|---|---|
+| 17 (prime) | 131071 (Mersenne prime) | 2 | **2** | **131070 = the whole space** |
+| 19 (prime) | 524287 (Mersenne prime) | 2 | **2** | **524286 = the whole space** |
+| 20 | 3·5²·11·31·41 | 48 | 3205 | 120 |
+| 24 | 3²·5·7·13·17·241 | 96 | **8394** | 240 |
+
+Mersenne-prime rings give a single maximal orbit covering the entire universe —
+a perfect clock. Heavily factorable rings shatter into thousands of orbits,
+which is the CRT decomposition made visible: the state splits into independent
+components, one per prime power, each cycling on its own period. **Independent
+components are exactly what a machine needs for registers.** Ring size is a
+real knob, running from one giant clock at the prime end to thousands of
+registers at the composite end.
+
+Turn the Collatz parity branch back on and **both ends collapse to 3–5 orbits,
+for every W**, prime or composite, across the whole scan. The reason is one
+line: `2^W − 1` is odd, so a residue mod any factor carries no information
+about the parity of the representative. The branch reads a bit that is
+invisible to every CRT component and couples all of them through it — a global
+broadcast no part of the decomposition can see coming, re-randomising the whole
+state.
+
+That is the sharpest form of the obstruction in this whole investigation: the
+algebra of the ring hands you exactly the independent parts a machine needs,
+and the parity branch — the thing that makes this Collatz rather than plain
+multiplication — is precisely what destroys them.
+
 **The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
 mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
 loop because it forgets its input in a single step (the memoryless hash of
