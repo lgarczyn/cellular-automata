@@ -654,6 +654,50 @@ loop because it forgets its input in a single step (the memoryless hash of
 postscript 2). The slowest clock in the system and the fastest, refusing for
 completely independent reasons.
 
+## Why one bit per cell is the whole state
+
+The CA displays **six** states per cell: `(digit, carry)` in four combinations,
+plus `LeastEdge`, plus blank. Only one of those is dynamical state.
+
+Reading `computeCell`: the next row is built from `shifted?.digit` and
+`same?.digit` — **digits only** from the row above — while `carryIn` comes from
+`get(r, c-1)`, the left neighbour in the *same* row. So the carry is an
+intra-row sweep, recomputed from the digits every time, never fed forward.
+
+Verified by porting the rule faithfully and keeping both bits: 300 random pairs
+of rows with **identical digits but different carries** produce identical next
+rows, zero mismatches. And the resulting digit dynamics equals `3x` exactly on
+every trial.
+
+So `carry` is a derived quantity — visible in the render, not part of the
+state — and `LeastEdge`/blank are the two edge markers the bulk drops. One bit
+per cell is complete.
+
+## A single structure with several different sections
+
+The stronger request: not two patterns spliced, but **one** repeating pattern
+whose unit cell contains large distinct sections, each internally periodic, and
+which keeps that sectioning for its whole orbit. Searched exhaustively over
+every orbit of the block dynamics `X → 3X mod (2^P − 1)`:
+
+| P | orbits where *every* state has ≥2 different repeating sections |
+|---|---|
+| 12 | 0 |
+| 16 | 0 |
+| 18 | 0 |
+| 20 | 0 |
+
+None. A P-periodic state has an arbitrary P-bit unit cell, so you can *build*
+any sectioning you like — but the cell evolves as `X → 3X mod (2^P − 1)`, and
+the only blocks fixed by that are trivial (`3X ≡ X` forces `2X ≡ 0`, and the
+modulus is odd). The unit cell must churn, so its internal sectioning cannot be
+held.
+
+`images/collatz-threeloops.png` shows what *can* be held: twelve structures,
+each rendered for exactly three complete periods with the loop boundaries
+marked, no seed transient — one uniform texture per structure, which is exactly
+the constraint.
+
 ## Patching crystals together: you always can, and it never holds
 
 The obvious objection is combinatorial: there are infinitely many looping
