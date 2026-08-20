@@ -583,7 +583,21 @@ two patterns but a genuinely new texture — the singles are clean diagonals and
 stripes, and the pairs come out as houndstooth and herringbone weaves. Every one
 is exactly periodic and persists forever.
 
-**Two crystals side by side, with a wall — exhaustively impossible**
+**Two crystals side by side, with a wall — they coexist, with a lifetime**
+(`images/collatz-domains.png`). Put a period-3 crystal in cells 0–149 and a
+period-5 crystal in 150–299. Both survive as recognisable crystals, and each
+region erodes from its walls at a measured **1.58 cells per step** — which is
+`log₂3 = 1.585`, the same light-cone speed as every other disturbance here. A
+crystal region is a region where `x_i = x_{i+p}`, that condition is just another
+perturbation, and perturbations travel at exactly one speed in this medium.
+
+So adjacency is not forbidden, it is *timed*: two crystals of width w coexist
+cleanly for about `w/1.58` steps. 150 cells each buys ~95 steps of clean
+two-domain structure, and the right panel of the figure shows it directly —
+two solid coloured wedges shrinking under an advancing front of disorder. Wider
+domains last proportionally longer, and nothing lasts forever.
+
+**Permanently, with a vacuum gap — exhaustively impossible**
 (`tools/collatz_domains.py`). The persistent states can be *enumerated exactly*
 rather than sampled: a state has period dividing T precisely when
 `(3^T − 1)x ≡ 0 mod M`, i.e. when it is a multiple of `M/gcd(M, 3^T − 1)`. Take
