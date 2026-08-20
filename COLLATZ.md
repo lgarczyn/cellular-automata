@@ -809,6 +809,87 @@ lifetime of about `width / 1.58` steps, and then the orbit carries on for its
 full period, which may be astronomically longer, before the picture happens to
 reassemble.
 
+## An atlas of patterns, and the law that says which ones compose
+
+(`tools/collatz_atlas.py`, `images/collatz-atlas.png`.) The right coordinate
+makes all of the above bookkeeping. A spatially periodic state of period `p`
+with cell value `X` is the repeating binary expansion of
+
+```
+r = X / (2^p − 1)   in Q/Z,
+```
+
+and `X → 3X` is just `r → 3r`. So **a pattern is a rational number with odd
+denominator**, and writing `r = a/d` in lowest terms gives all three of its
+numbers at once:
+
+| | |
+|---|---|
+| persistent | ⟺ `3 ∤ d` |
+| spatial period | `ord_d(2)` |
+| temporal period | `ord_d(3)` |
+
+"Which structures exist" becomes "which odd denominators are there" — a
+catalogue, not a search. `d = 7` is the period-3 crystal with temporal period 6;
+`d = 73` is period 9 / temporal 12; `d = 127` is period 7 / temporal 126.
+
+**Superposition** (two patterns in the same cells) always composes: `d = lcm`,
+periods `lcm`. No compatibility question at all.
+
+**Concatenation** (blocks side by side — `AB`, `AAB`, `ABBA`) does have one, and
+it is a congruence. Write the *3-adic quota* of a width-`n` cell as
+
+```
+q_n = v₃(2ⁿ − 1) = 0 if n odd, else 1 + v₃(n/2),
+```
+
+so a cell of width `n` is persistent exactly when `v₃(X) ≥ q_n`. Then for `k`
+blocks of width `L`, with `B₀` a persistent pattern in its own right:
+
+```
+B₀B₁…B_{k−1} persistent  ⟺  Σⱼ (Bⱼ − B₀)·2^{jL} ≡ 0  (mod 3^{q_kL})
+```
+
+The background contributes nothing — the entire condition falls on the
+*differences between blocks*. Verified exhaustively for `L ≤ 7`, `k ≤ 4`.
+
+For `k = 2` this collapses to something readable by eye:
+
+```
+A and B can sit side by side  ⟺  A ≡ B  (mod 3^{q_2L})
+```
+
+Compatibility is therefore an **equivalence relation**. Every persistent block
+carries a **charge**
+
+```
+c = (A / 3^{q_L})  mod  3^{q_2L − q_L}
+```
+
+and two blocks compose iff their charges match. The figure's four matrices,
+sorted by charge, are literally that relation — solid block-diagonal:
+
+| L | blocks | charges | pairs that compose |
+|---|---|---|---|
+| 5 | 32 | 3 | 33.4% |
+| 6 | 8 | 1 | **100%** |
+| 7 | 128 | 3 | 33.3% |
+| 9 | 512 | 27 | 3.7% |
+| 12 | 456 | 1 | **100%** |
+
+When the two quotas agree (`L` even, and `v₃(L) = v₃(L/2)`) there is one charge
+class and **everything composes with everything**. Odd `L` splits into
+`3^{1+v₃(L)}` classes and most pairs are forbidden.
+
+This is the clean answer to the patching question above. A wall *can* be made
+permanent — the bottom-middle panel is `A = #.##.##.#`, `B = .###.....` repeating
+every 9 cells with period 36, a genuine standing domain wall that never erodes.
+What the earlier section got right is that an *arbitrary* juxtaposition fails;
+what it missed is that the failures are exactly the charge mismatches, and they
+are a measure-`(1 − 1/3^m)` subset, not everything. A mismatched pair burns off
+its 3-part in `q_W` steps (three, in the bottom-right panel) and lands on a
+different orbit.
+
 ## Is it Rule 90? No — it is Rule 60 with carries
 
 (`images/collatz-rule60.png`.) Multiplication by 3 is multiplication by the
