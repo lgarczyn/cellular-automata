@@ -736,10 +736,39 @@ Literal examples, all with every block non-empty:
 | 90 | 30 | 30 | `ABBCC` | `.######.##..#.##..#.....#.....` |
 | 120 | 60 | 24 | `AABCCD` | six blocks of ten, four distinct |
 
-And it survives the orbit rather than holding for one row: `AAB` at `W=126`
-still has block structure in **31 of its 36 rows**, `AABB` in 6 of 8, `ABBCC` in
-10 of 30. Others (`ABCDD`, `ABCA`) really do hold for a single row only — both
-behaviours are there, which is precisely what a blanket "cannot be held" denied.
+The whole `AABB` loop, two spatial copies, all eight rows — `AABB` marks a row
+carrying the same word, `~` a row carrying a different one:
+
+```
+      AAAAA|AAAAA|BBBBB|BBBBB   AAAAA|AAAAA|BBBBB|BBBBB
+AABB  ..###|..###|##...|##...   ..###|..###|##...|##...
+~     ..#.#|.##.#|##.#.|#..#.   ..#.#|.##.#|##.#.|#..#.
+~     ..###|##...|##...|..###   ..###|##...|##...|..###
+      .##.#|##.#.|#..#.|..#.#   .##.#|##.#.|#..#.|..#.#
+AABB  ##...|##...|..###|..###   ##...|##...|..###|..###
+~     ##.#.|#..#.|..#.#|.##.#   ##.#.|#..#.|..#.#|.##.#
+~     ##...|..###|..###|##...   ##...|..###|..###|##...
+      #..#.|..#.#|.##.#|##.#.   #..#.|..#.#|.##.#|##.#.
+```
+
+Row 2 is `ABBA` on the same two blocks; row 4 is `AABB` with the roles swapped.
+The two blocks `..###` and `##...` keep being *re*arranged rather than destroyed.
+
+How durable is it? Two different questions, two very different answers:
+
+| word | shape | rows with *some* word | rows with *this* word |
+|---|---|---|---|
+| `AAB` | W=126, cell 18, T=36 | 31/36 | 2/36 |
+| `AABB` | W=140, cell 20, T=8 | 6/8 | 2/8 |
+| `ABBA` | W=144, cell 12, T=12 | 12/12 | 3/12 |
+| `ABBCC` | W=90, cell 30, T=30 | 10/30 | 1/30 |
+
+Block structure of *some* kind recurs in most rows of a loop. The *specific*
+word holds for two or three rows and then the blocks drift apart. So the
+sectioning is common and recurrent, but not persistent — my "cannot be held"
+was wrong about how often sectioning appears, and right that a given sectioning
+doesn't survive. The only thing the fixed-block argument ever established was
+that no block can be individually *fixed* by `X → 3X`.
 
 A second thing falls out. The most redundant words have an *empty* repeated
 block: `AABBBB` at `W=126` is `##.##.............` — a six-cell blob with twelve

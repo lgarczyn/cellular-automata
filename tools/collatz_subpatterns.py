@@ -39,17 +39,22 @@ that is not itself periodic, but which decomposes into large blocks that repeat.
 literal `AAB` (W=126, cell 18, three blocks of six) and `AABB` (W=140, cell 20,
 four blocks of five).
 
-And the sectioning is not just a property of the one canonical row. Following
-each loop all the way round:
+The sectioning is not confined to the canonical row, but it is not durable
+either, and the two questions have very different answers:
 
-    AAB     W=126  cell 18    31 of 36 rows still have block structure
-    AABB    W=140  cell 20     6 of  8
-    ABBCC   W=90   cell 30    10 of 30
+    word    shape                  some word   this word
+    AAB     W=126 cell 18 T=36        31/36        2/36
+    AABB    W=140 cell 20 T=8          6/8         2/8
+    ABBA    W=144 cell 12 T=12        12/12        3/12
+    ABBCC   W=90  cell 30 T=30        10/30        1/30
 
-which kills the argument in COLLATZ.md that the cell "must churn, so its
-internal sectioning cannot be held". That argument only ruled out blocks that
-are individually *fixed* by x -> 3x. It says nothing about A and B both changing
-while staying equal to each other, which is what actually happens.
+Block structure of SOME kind recurs in most rows of a loop; the SPECIFIC word
+typically holds for two or three rows and then the blocks drift apart. So the
+COLLATZ.md argument that the cell "must churn, so its internal sectioning cannot
+be held" was wrong about the row-by-row picture - sectioning is common, and
+recurs - but right that a given sectioning does not persist. What that argument
+actually established was only that no block can be individually FIXED by
+x -> 3x; the rest was overreach either way.
 
 The words with an EMPTY repeated block are worth a second look too: `AABBBB` at
 W=126 is `##.##.............`, a six-cell blob with twelve cells of vacuum in its
@@ -262,12 +267,22 @@ def main():
             break
 
     # does the sectioning survive the orbit, or only hold in the canonical row?
-    print("how long the sectioning lasts - rows of the loop that still have "
-          "block structure:")
+    # two different questions, with two very different answers.
+    print("how long the sectioning lasts:")
+    print("   %-7s %-22s %12s %12s"
+          % ("word", "shape", "some word", "this word"))
     for W, p, T, cell, k, L, w in picks:
-        n = sum(1 for v in cell
-                if sub_patterns([(v >> i) & 1 for i in range(p)]))
-        print("   %-7s W=%-4d cell %-3d   %2d of %2d rows" % (w, W, p, n, T))
+        anyw = same = 0
+        for v in cell:
+            ps = sub_patterns([(v >> i) & 1 for i in range(p)])
+            if ps:
+                anyw += 1
+            if any(q[2] == w and q[0] == k for q in ps):
+                same += 1
+        print("   %-7s W=%-4d cell %-3d T=%-3d %8d/%-3d %8d/%-3d"
+              % (w, W, p, T, anyw, T, same, T))
+    print("   (block structure of SOME kind recurs constantly; the specific word")
+    print("    usually holds for only two or three rows of the loop)")
     print()
 
     render(picks, images)
