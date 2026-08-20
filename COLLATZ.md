@@ -890,6 +890,37 @@ are a measure-`(1 − 1/3^m)` subset, not everything. A mismatched pair burns of
 its 3-part in `q_W` steps (three, in the bottom-right panel) and lands on a
 different orbit.
 
+### The `AᵏB` family
+
+(`tools/collatz_akb.py`, `images/collatz-akb.png`.) For the word `A…AB` there is
+only one nonzero difference term, at position `k−1`, so the law collapses to
+
+```
+A^(k−1)B persistent  ⟺  B ≡ A  (mod 3^{q_kL})
+```
+
+and the quota depends on `k` only through `v₃`. At `L = 5` the quotas run
+`3¹, 0, 3¹, 0, 3², 0, 3¹, 0, 3¹, 0, 3²` for `k = 2…12`, so a single pair with
+`v₃(B−A) ≥ 2` clears all of them at once. `A = #.#..`, `B = .###.` (difference 9)
+tiles as every word from `AB` to `AᵏB`:
+
+| word | width | period |
+|---|---|---|
+| `AB` | 10 | 30 |
+| `AAB` | 15 | 150 |
+| `AAAB` | 20 | 120 |
+| `AAAAB` | 25 | 450 |
+| `AAAAAB` | 30 | 1 650 |
+| `AAAAAAB` | 35 | 1 106 280 |
+| `AAAAAAAB` | 40 | 61 680 |
+| `AAAAAAAAB` | 45 | 233 100 |
+
+The period is not monotone in `k` — it is `ord_d(3)` for whatever `d` the cell
+lands on, so `AAAAAAB` at width 35 runs for a million steps while `AAAAAAAB` at
+width 40 takes 61 680. Which `k` a pair supports is read straight off `v₃(B−A)`:
+`v₃ = 0` keeps only odd `k` (free, since `kL` is then odd and the quota is zero),
+`v₃ = 1` loses `k = 6, 12`, `v₃ ≥ 2` keeps everything up to 12.
+
 ## Is it Rule 90? No — it is Rule 60 with carries
 
 (`images/collatz-rule60.png`.) Multiplication by 3 is multiplication by the
