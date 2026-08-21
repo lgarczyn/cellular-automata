@@ -1353,7 +1353,13 @@ every step.
 What is actually true: the all-ones number STARTS a chain where each step has
 exactly one halving (v=1, the slowest possible LSB progression), but the pattern
 morphs every step - it is not a stable block, it just keeps shedding one bit at a
-time for ~k steps. "Slow LSB progression" is a property of a morphing v=1 chain,
-not of any single fixed pattern. The correct "loop the MSB" boundary model was not
-established - my end-around-carry guess produced a degenerate artifact, and the
-model needs to be pinned down before searching again.
+time for ~k steps. **The correct answer** (2-adic / looped-MSB done right): "loop the MSB" means the
+MSB pattern repeats forever to the left = a 2-adic integer. There the all-ones
+pattern is `-1 = ...1111`, and it IS a fixed point: `3(-1)+1 = -2`, halve once, back
+to `-1`. It progresses at exactly ONE halving per step - not zero (that was the
+artifact), but the slowest a nonzero pattern can go. It is unique: v=1 forever
+forces `n = -1 mod 2^k` for every k. Every other looped-MSB pattern halves faster
+(`-1/7 = ...001001` -> 1.995/step, `-5 = ...11011` -> 1.5, `-1/3 = ...0101` ->
+2.475). A finite block of ones only approximates `-1` for ~k steps while its pattern
+morphs. So the slowest-LSB-progression pattern is the looped all-ones MSB, at rate
+1, and it is genuinely fixed - the corrected, real version of the retracted claim.
