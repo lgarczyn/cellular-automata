@@ -1303,3 +1303,29 @@ This is the MSB counterpart of the anchoring law: x3 is lower-triangular, so the
 LSB side is frozen/structured (that is where crystals and every repeating pattern
 live) and the MSB side is the disordered growing front. Repetition is something
 you build on the LSB side deliberately, never something that emerges in the MSB.
+
+## Re-checking the anchoring law on the ACTUAL diagonalized CA
+
+(`images/collatz-diagonal-anchor.png`.) The anchoring result and the MSB scan were
+computed on the value map `x → 3x` (rows = Collatz steps), NOT the diagonalized
+`(digit,carry)` antidiagonal CA. Re-ran the anchoring experiment on the real CA: a
+crystal chunk seeded as `(digit,carry)`, evolved by the majority-carry rule, on
+columns c (low c = LSB/right, high c = MSB/left).
+
+Result: the low-c (right) edge stays frozen and the high-c (left) edge grows at
+log2(3), on-shell (carry=0) AND off-shell (arbitrary carry). Off-shell configs
+perturbed the right edge by only ~3 cells transiently, never sustained. So the
+lower-triangular anchoring holds on the true CA too - but this was verified, not
+assumed. The rule is: value-map results about the LSB/MSB asymmetry do carry over,
+but they MUST be checked on the diagonalized CA, because off-shell carry states
+exist that the value map cannot represent.
+
+Survival note (from Lou): a pattern that cannot grow left fast enough is eaten by
+the right side. In arithmetic: x3 advances the left edge at log2(3) ~ 1.585
+bits/step, while the halvings consume ~2 bits/step (E[v2(3n+1)] = 2). Net -0.415 -
+the right wins, everything is eaten, trajectories fall to 1. A pattern survives
+only if it grows left FASTER than it is consumed, i.e. has fewer than log2(3)
+halvings per odd step - the high-growth / few-halving structures (the 2^k-1 family
+and the traveling crystals whose phase velocity k > 2). That growth-vs-consumption
+balance, on the diagonalized CA WITH the right-side halving included, is the model
+the machine question actually lives in - and the one search not yet run.
