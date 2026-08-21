@@ -1339,3 +1339,24 @@ axis is reversed, MSB lands on the right and growth *looks* like it expands righ
 which is backwards from this convention. Reverse the column axis (MSB-left) in every
 spacetime render. `images/collatz-diagonal-anchor.png` is corrected;
 `collatz-anchored.png` still uses MSB-right and should be flipped if revisited.
+
+## Loop the MSB: patterns that slow (or stop) LSB progression
+
+(`images/collatz-lsb-slow.png`.) Boundary flipped: loop the MSB (end-around wrap,
+so the number stays W bits), watch the LSB-side halving progression, find patterns
+that slow it. "LSB progression" = halvings per step (v2 of 3n+1); v>=1 per odd step
+so the floor is 1.
+
+- **Open MSB**: the slowest is all-ones 2^k-1 (v=1 every step, the minimum), a
+  transient lasting ~k steps - the finite approximation of the 2-adic fixed point
+  -1 (all ones, 3(-1)+1=-2 -> -1, forever v=1).
+- **Looped MSB**: the pattern `n = 2^(W-1)-1` (a solid block of W-1 ones just below
+  the MSB) is an EXACT FIXED POINT with ZERO halvings - `3n+1 ≡ n mod (2^W-1)` and n
+  is odd, so it never changes and never halves. LSB progression stops completely.
+  Verified for W = 11..41. Near-block patterns move slowly (~1.8/step); generic
+  random patterns are eaten at ~2/step.
+
+So the pattern that most resists the right-side eating is the block of ones - the
+same all-ones structure that is the slowest-descent / high-water-mark family from
+the very first stopping-time graph. It is where the halving stalls: n = 2^(W-1)-1
+is fixed, and near it the LSB front creeps at ~log2(3) instead of ~2.
