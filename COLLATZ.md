@@ -1645,3 +1645,20 @@ Where this leaves the machine program: the three habitats are now mapped
 (void = x3 algebra, band = transport, interface = prepaid player piano), and
 each is individually closed to bootstrapping. The remaining open door is the
 one that equals the Collatz divergence problem itself.
+
+## The hailstone-record protocol (synthesis of the machine tools)
+
+(`tools/collatz_protocol.py`.) Right edge that blocks the spread (all-ones tape,
+v=1 guaranteed) + left edge that preserves itself (cargo bits ride the climb
+untouched) + patching (lift/glue) combine into a record-search protocol:
+restrict to n = -1 mod 2^(j+1) (j guaranteed climb steps), search the preserved
+cargo bits for a lucky fall. Pilot at 48 bits, equal effort per class: mean
+steps rise +2.41 per designed bit exactly as predicted; best-found peaks at the
+HYBRID sweet spot (j=24: 487 odd steps, 10.15 steps/bit, champion verified) and
+collapses when design eats the whole search space (j=40). Blockers, all
+previously measured/proved: the fuse law (1 bit per designed step, no
+bootstrap), the 0.585 exchange rate (carries are hash), fall genericity (luck
+~ ln effort), chaining collapse (profile-independent total: ~4.82 steps per
+designed bit ceiling), and the fact that beating that ceiling forever IS the
+divergence problem. Designed giants give certified absolute records (linear in
+seed size); the small-n ratio records are luck and cannot scale.
