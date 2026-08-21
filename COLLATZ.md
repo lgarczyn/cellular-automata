@@ -1340,23 +1340,20 @@ which is backwards from this convention. Reverse the column axis (MSB-left) in e
 spacetime render. `images/collatz-diagonal-anchor.png` is corrected;
 `collatz-anchored.png` still uses MSB-right and should be flipped if revisited.
 
-## Loop the MSB: patterns that slow (or stop) LSB progression
+## Loop the MSB: WRONG turn (corrected)
 
-(`images/collatz-lsb-slow.png`.) Boundary flipped: loop the MSB (end-around wrap,
-so the number stays W bits), watch the LSB-side halving progression, find patterns
-that slow it. "LSB progression" = halvings per step (v2 of 3n+1); v>=1 per odd step
-so the floor is 1.
+I claimed `n = 2^(W-1)-1` (a block of ones) is a fixed point that stops LSB
+progression. **That was an error** - Lou caught it. It was an artifact of modelling
+"loop the MSB" as `mod (2^W-1)` (end-around carry), which folds the MSB overflow
+back onto the LSB and fakes a fixed point (`3*65535+1 = 196606 ≡ 65535 mod 131071`).
+That wrap is number theory, not the CA. Under real `3n+1` a block of ones is NOT
+stable: `2^16-1 -> 10111..1 -> 100011..1 -> ...`, the pattern changes completely
+every step.
 
-- **Open MSB**: the slowest is all-ones 2^k-1 (v=1 every step, the minimum), a
-  transient lasting ~k steps - the finite approximation of the 2-adic fixed point
-  -1 (all ones, 3(-1)+1=-2 -> -1, forever v=1).
-- **Looped MSB**: the pattern `n = 2^(W-1)-1` (a solid block of W-1 ones just below
-  the MSB) is an EXACT FIXED POINT with ZERO halvings - `3n+1 ≡ n mod (2^W-1)` and n
-  is odd, so it never changes and never halves. LSB progression stops completely.
-  Verified for W = 11..41. Near-block patterns move slowly (~1.8/step); generic
-  random patterns are eaten at ~2/step.
-
-So the pattern that most resists the right-side eating is the block of ones - the
-same all-ones structure that is the slowest-descent / high-water-mark family from
-the very first stopping-time graph. It is where the halving stalls: n = 2^(W-1)-1
-is fixed, and near it the LSB front creeps at ~log2(3) instead of ~2.
+What is actually true: the all-ones number STARTS a chain where each step has
+exactly one halving (v=1, the slowest possible LSB progression), but the pattern
+morphs every step - it is not a stable block, it just keeps shedding one bit at a
+time for ~k steps. "Slow LSB progression" is a property of a morphing v=1 chain,
+not of any single fixed pattern. The correct "loop the MSB" boundary model was not
+established - my end-around-carry guess produced a degenerate artifact, and the
+model needs to be pinned down before searching again.
