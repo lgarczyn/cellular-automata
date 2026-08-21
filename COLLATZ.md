@@ -1252,3 +1252,29 @@ on.
   self-affine cascade, memoryless across levels, blind to base 3, with the
   popcount excess as the one open anomaly. And "tree depth as y" collapses to
   the tripling count `b`, which is the transform panel 2 already.)
+
+## The definitive answer on spreading left (`images/collatz-anchored.png`)
+
+Searched every model of the pure bulk (`x → 3x` with carry, the local rule when
+the halving/`+1` are "gargled away" far off): 262k vacuum defects, 1.31M
+exhaustive defects on 142 ethers, 2708 ether-domain walls, finite chunks. The
+result is one clean law, shown across a traveling crystal, a plain crystal, and a
+random block:
+
+> Under `×3`-with-carry every finite pattern is **anchored at its LSB edge** and
+> spreads **only toward the MSB, at exactly log₂3**. The interior keeps its
+> structure; only the MSB front garbles.
+
+The reason is that `×3` is **lower-triangular**: bit `j` of `3x` depends only on
+bits `≤ j` of `x` (`3x mod 2^k` depends only on `x mod 2^k`). So the low-order
+(LSB) side can never be disturbed from above — it is frozen — and all growth is a
+one-sided front advancing MSB-ward at the light-cone speed log₂3. You cannot make
+a pattern spread the other way, or at another speed, or as a bounded coherent
+packet. The only coherent movers are the full-width traveling-crystal
+eigenvectors (they translate rigidly; they do not localize).
+
+So "a pattern that spreads left" has a definite answer that depends only on which
+way "left" points: toward the MSB, **yes** — every pattern does, universally, at
+log₂3, and a traveling crystal does it while keeping ordered interior structure
+(`collatz-anchored.png`, left panel). Toward the LSB, **no** — that edge is
+frozen by lower-triangularity, in the pure bulk, for every pattern.
