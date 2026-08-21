@@ -11,6 +11,8 @@ Scope key:
 |---|---|---|
 | collatz_real.py | [real-CA] | verified port of CA.CollatzStep (rows = odd trajectory) |
 | collatz_hex.py | [real-CA] | hex renderer matching the app (MSB left) |
+| collatz_bridge.py | [real-CA]+[value] | the bridge: composed tails vs LeastEdge rhythm. Crystal tails = exactly periodic v-seq (2-adic ideal); block boundary located by rhythm to the bit; x3 charge has NO rhythm effect (\|d\| <= 0.1); domain walls radiate a universal ~log2(3) bits/step disorder wedge, charge-blind |
+| collatz_offshell.py | [real-CA] | antidiagonal (t=r+c) slice machine, verified cell-exact vs collatz_real; off-shell census: older-slice carries are dead state, flips instantly re-seed another integer's shell (1 broken link), low-bit flips coalesce back, void digit seeds = transient x3 ghosts, void LE seeds boot a parasite machine that caps and consumes the host; no persistent off-shell soliton |
 | reproduce_all.py | [real-CA]+[value] | E1..E14 proof-of-work reproduction; NOTE: E5/E14 test finite-seed stopping times, they do not probe bulk-interior structure |
 
 ## Valid value-map results (statistics of real trajectories)
@@ -24,11 +26,14 @@ Scope key:
 | collatz_cycles.py, collatz_rational.py | cycle bounds; rational slope iff cycle |
 | collatz_halfmachine.py | 2-adic periodic points (cycles), C/(2^a-3^b) |
 | collatz_halfrun.py | half machine as fuse: prescribed halving patterns, ~1 bit/step burn, exchange rate log2(3)-1 |
+| collatz_runners.py | runner-rhythm lifting + exact fuse law: v-prefix (sum S) = one class mod 2^(S+1); overshoot = 2-adic agreement with rational runner C/(2^S-3^l), geometric tail, 0 exceptions in 640k trials; hex figure of best fuse is [real-CA] |
 | collatz_feather.py | trajectory feather art |
 
 ## x3-bulk results (true about x3 only; the "crystals/gliders zoo")
 collatz_bulk.py, collatz_build.py, collatz_atlas.py (composition charge law),
 collatz_akb.py, collatz_truecomp.py (period-preserving composition census),
+collatz_charge3.py (k>=3 weighted charge law: pairwise-forbidden blocks
+composing as odd-length words; alternating-sum law at k=4),
 collatz_subpatterns.py, collatz_domains.py, collatz_traveling.py (rigid
 shifters 3=2^k mod d), collatz_leftmover.py, collatz_leftsearch.py,
 collatz_glidersearch.py (x3 digit/carry majority CA, NOT CollatzStep),

@@ -58,17 +58,21 @@ One session lost a lot of signal to the same few mismatches, repeatedly:
 - Survival balance [real-CA]: net growth = log2(3) - vbar per odd step;
   measured all-ones vbar ~ 1.8, random ~ 2.0; everything shrinks.
 
-Remaining:
-- The real object: a structure whose LeastEdge interface is periodic
-  ("runners") for as long as possible, in the hex CA. Search for tapes
-  sustaining low vbar beyond the all-ones transient; characterize what
-  extends the fuse; render candidates in hex.
-- Off-shell tapes: (digit, carry) configurations with free carries have
-  never been searched on the real rule.
-- Composite tails feeding one head (sums a/d1 + a/d2): trivial in Q/Z,
-  never rendered or checked at digit level.
-- Sustained vbar < log2(3) forever = a divergent trajectory = the open
-  Collatz problem. Realistic goal: maximal fuses and their structure.
+Remaining -> RESOLVED by the 2026-08-21 agent sweep (details in the synthesis
+section at the end of this file):
+- Runner search: SOLVED EXACTLY (`tools/collatz_runners.py`). Every rhythm has
+  a rational runner n* = C/(2^S - 3^l); a tape performs the rhythm for a step
+  count determined exactly by its 2-adic agreement A with n* (0 exceptions in
+  640k trials + independent check). Overshoot is fair-coin geometric for every
+  rhythm; NO tape structure beats it. Fuse lifetime = digits of the runner you
+  wrote. Nothing extends it.
+- Off-shell tapes: DONE (`tools/collatz_offshell.py`). Carry is genuine but
+  one-slice-ephemeral state; the on-shell union is an immediate attractor;
+  no off-shell soliton (1048 perturbations). Void sector: digit patterns
+  beyond the MSB run PURE x3 inside the real CA until absorbed; a void
+  LeastEdge boots a parasite machine that consumes the host.
+- Still open (the wall): sustained vbar < log2(3) forever = a divergent
+  trajectory = the open Collatz problem.
 
 **Composable patterns.** Done [x3-bulk], valid there:
 - Catalogue: pattern = a/d with 3 not dividing d; spatial period ord_d(2),
@@ -83,16 +87,28 @@ Remaining:
   (d = 13, 29, 61); under the half-open boundary the tail slides left while
   feeding the head.
 
-Remaining:
-- Re-express the atlas at the hex tile level on the real CA: what a composed
-  pattern looks like as tiles including carries; whether "charge" has a tile
-  meaning (conjecture: it is the carry field's 3-adic content).
-- The bridge question, never touched: when the LeastEdge front eats into a
-  composed tail, does the composition show up in the runner rhythm (the
-  v-sequence)? This links composition to the half machine.
-- k >= 3 weighted charge law (sum c_j u^j = 0): triples that compose while
-  their pairs do not; mapped nowhere yet.
-- Off-shell compositions (inconsistent carry fields): unexplored.
+Remaining / resolved:
+- Atlas at the hex tile level: PARTLY RESOLVED via the void-sector discovery
+  (`tools/collatz_offshell.py`): the x3-bulk IS the physics of digit patterns
+  in the void beyond the MSB of the real CA, so the whole atlas is real-CA
+  void-sector physics, valid until the host front absorbs the pattern. The
+  charge-as-carry-content conjecture is dead at the interface: charge never
+  registers in the LeastEdge rhythm (|d| <= 0.1); it is a void/persistence
+  quantity only.
+- The bridge question - ANSWERED (2026-08-21, `tools/collatz_bridge.py`, last
+  section of this file): composition is loud in the rhythm (crystal tails give
+  an exactly periodic v-sequence = the 2-adic ideal of -A/(2^L-1); block
+  boundaries are located by the rhythm to the bit), but the x3 CHARGE never
+  registers in the rhythm (|d| <= 0.1 across three geometries); the
+  structure-destroying wedge at a domain wall is universal (archimedean,
+  ~log2(3) bits/step), not charge-gated.
+- k >= 3 weighted charge law: MAPPED (`tools/collatz_charge3.py`). Debt lives
+  only on even window widths (3 | 2^n-1 iff n even): strict triples exist iff
+  L odd with >= 3 populated charges (336 at L=3, 465948 at L=7); k=4 needs the
+  alternating sum, so order matters and palindromes (ABBA, AABB) rescue
+  forbidden pairs. Verified by simulation.
+- Off-shell compositions: subsumed by the off-shell sweep (on-shell attractor;
+  nothing persistent to compose).
 
 ## The idea
 
@@ -1534,3 +1550,98 @@ are the quasicrystal/2-adic structure we mapped. The x3 "bulk" is a genuine but
 DIFFERENT automaton (ca-mul3.js); its crystals are real about x3 and unreal about
 Collatz. The hex reproduction makes the distinction concrete: same questions, real
 rule, and the persistent-structure answers all collapse to "it descends."
+
+# ====================================================================
+
+## The bridge: the composition atlas meets the LeastEdge rhythm (2026-08-21)
+
+`tools/collatz_bridge.py`; figures `images/collatz-bridge-hex.png`,
+`collatz-bridge-wedge.png`, `collatz-bridge-stats.png`. Scope labels per
+observable inside the script docstring. Setup: integer seeds whose low region
+is kA repeats of width-L block A, then kB repeats of block B, then a 1 as MSB
+cap; the real automaton (rows = odd steps, verified against the grid: LE
+extent per row == cumulative v, and bulk bits sit at CONSTANT columns) eats
+the A region and then the B region while we record the v-sequence.
+
+**Q1 - crystal vs random tails [real-CA rows].** A crystal low region is
+consumed to an exactly periodic beat: the measured v-sequence equals, step for
+step, the odd-map orbit of the 2-adic rational -A/(2^L-1) (180/180 crystals,
+L=5,7,9, 240-bit regions). Random regions have no such order: autocorrelation
+peak 0.71 +- 0.16 (crystals) vs 0.21 +- 0.04 (random), Cohen's d = 4.9. Mean
+v barely differs (2.06 vs 2.01) - the signature is order, not rate.
+
+**Q2 - the boundary is exact [real-CA rows].** Over 1888 composed pairs the
+rhythm diverges from the pure-A ideal exactly when the halving window pokes
+past the interface bit: bits-consumed-at-divergence minus kA*L has median +1,
+IQR 0..1, max 6; a blind changepoint (break of the learned A-period) finds
+the same step 1404/1404. Parity-window determinism, seen as CA physics.
+
+**Q3 - charge: bulk story yes, rhythm story no.** Three geometries:
+- Domain pairs A^40 B^60: the interface radiates a disorder wedge MSB-ward
+  into B at ~log2(3) bits/step in the mean (the archimedean image of the
+  consumed region - 3^t spreads the A-part's influence upward). The wedge is
+  IDENTICAL for matched and mismatched charge (d = -0.08 / -0.04); it is not
+  the atlas law at work, and truecomp already said A^k B^k' is never a true
+  composition. Because of the wedge the post-boundary rhythm never re-locks
+  within a 300-bit B region and B-phase vbar is random-like (2.01-2.03,
+  |d| <= 0.10).
+- Small-wedge relock (kA=12): the rhythm DOES re-lock onto a
+  (2^L-1)-denominator cycle after the wedge is eaten; relock delay matched
+  109 +- 24 vs mismatched 107 +- 24 steps (L=5, d = -0.10; L=7 d = +0.02).
+  Recovery is gated by wedge size, not charge.
+- Tilings (AB)^40, where matched charge IS a true x3 composition: consumption
+  vbar 1.791 vs 1.793 (d = +0.01). An exact cycle census of ALL width-p
+  crystal rhythms (p = 5,7,9,10,12,14) shows eventual-cycle vbar flat in
+  v3(X) - no charge rate law exists even for true compositions.
+
+**Side results [value].** (1) Among all width-p crystals the only negative
+(growing-side) cycle reached is all-ones -> -1 (v=1); every other crystal
+rhythm escapes to a positive cycle with vbar ~ 2 - one more face of
+"everything shrinks". (2) X = 341 = (2^10-1)/3 makes the tail exactly -1/3:
+3n+1 annihilates the whole 400-bit region in ONE step (v = 402) - the perfect
+fuse, and maximally mismatched in charge.
+
+**Honest negative, stated plainly:** the x3 charge - the quantity that decides
+composability in the bulk atlas - has NO measurable effect on the LeastEdge
+rhythm, the consumption rate, or the recovery time in the real automaton
+(|d| <= 0.1 everywhere, ~2400 runs). What the rhythm does carry is the
+composition itself (periodicity) and the block boundaries (to the bit), and
+what destroys structure at a domain wall is a universal archimedean wedge,
+whose size - not charge - sets how long the rhythm stays disordered.
+
+
+## Agent sweep synthesis (2026-08-21, four parallel agents)
+
+Full reports live in the four tool docstrings; figures in images/. The
+combined picture:
+
+1. **The rhythm is programmable but prepaid.** A crystal tail A (width L) is
+   consumed to a beat that equals, step for step, the odd-map orbit of the
+   2-adic rational -A/(2^L - 1): 180/180 crystals, Cohen's d = 4.9 vs random
+   [real-CA]. Block boundaries are audible in the rhythm to the bit
+   (1404/1404 changepoints at the predicted step). And the general law: any
+   rhythm's lifetime equals the number of 2-adic digits of its rational
+   runner present in the tape; overshoot is fair-coin geometric; no structure
+   cheats. The interface is a player piano: the tape is the roll, and the
+   only way to play longer is a longer roll.
+2. **Charge is void physics, not interface physics.** The x3 charge law
+   governs persistence in the void sector (and there the whole atlas is
+   genuine real-CA physics, since void digit patterns provably run pure x3
+   until absorbed), but it is silent at the LeastEdge: |d| <= 0.1 on every
+   rhythm observable across ~2400 runs.
+3. **The composition algebra is a signed 3-adic accounting.** Strict triples
+   (ABC legal, all pairs illegal) exist exactly for odd L; k=4 obeys an
+   alternating sum, so arrangement matters and palindromes rescue forbidden
+   pairs. Machine-flavored: parts that only work in the right order.
+4. **One tape, one machine.** Off-shell space is thin (on-shell = immediate
+   attractor; carries live one slice); the only rich off-shell episodes are
+   multi-machine sectors (x3 ghosts in the void, parasite LeastEdge engines),
+   and every one ends with a single machine owning the tape.
+5. **A curiosity worth keeping:** X = 341 = (2^10 - 1)/3 as a tail is the
+   fraction -1/3, and 3n+1 annihilates the entire designed region in ONE step
+   (verified v = 400 on a 400-bit region). The perfect anti-fuse.
+
+Where this leaves the machine program: the three habitats are now mapped
+(void = x3 algebra, band = transport, interface = prepaid player piano), and
+each is individually closed to bootstrapping. The remaining open door is the
+one that equals the Collatz divergence problem itself.
