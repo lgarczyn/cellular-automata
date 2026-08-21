@@ -1363,3 +1363,17 @@ forces `n = -1 mod 2^k` for every k. Every other looped-MSB pattern halves faste
 2.475). A finite block of ones only approximates `-1` for ~k steps while its pattern
 morphs. So the slowest-LSB-progression pattern is the looped all-ones MSB, at rate
 1, and it is genuinely fixed - the corrected, real version of the retracted claim.
+
+**BUT (Lou's second catch): `-1 = ...1111` is NOT a legal finite pattern.** It is a
+2-adic integer, genuinely infinite to the left, and it does NOT loop in a normal
+finite two-sided window. Tested every finite convention: under mod 2^W (overflow
+falls off, the physical one) all-ones DECAYS one bit per step (111..1 -> 011..1 ->
+001..1, eaten from the top); under mod 2^W-1 it is degenerate (all-ones = 0). The
+`0111..1` fixed point only exists under the end-around-carry artifact. So there is
+no finite realizable all-ones fixed pattern - the clean rate-1 answer lives only in
+the 2-adic (infinite) limit. In any real finite window the slowest patterns are
+transients (all-ones sheds one bit per step for ~k steps, then morphs), not fixed
+structures. The honest state: "slow/stopped LSB progression" has no finite fixed
+solution; it needs either a terminating LSB edge (for halving to mean anything) or
+an infinite 2-adic MSB (for -1 to be fixed), neither of which is a finite two-sided
+looped window.
