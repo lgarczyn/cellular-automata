@@ -1377,3 +1377,66 @@ structures. The honest state: "slow/stopped LSB progression" has no finite fixed
 solution; it needs either a terminating LSB edge (for halving to mean anything) or
 an infinite 2-adic MSB (for -1 to be fixed), neither of which is a finite two-sided
 looped window.
+
+# ====================================================================
+# REPRODUCTION ON THE REAL AUTOMATON (CA.CollatzStep) — hex
+# ====================================================================
+
+After Lou pointed out that every CA experiment above had been run on the WRONG
+automaton (pure x3 "bulk" / value-map / a mod-artifact), the real automaton was
+established and verified (`tools/collatz_real.py`, a faithful port of
+CA.CollatzStep) and every experiment was reproduced on it, rendered in the app's
+hex layout (`tools/collatz_hex.py`). The verified fact: each row is one ODD
+Collatz step (3n+1 then strip all trailing zeros); seed 27 -> 27,41,31,47,71,107,
+161,121,91,137. Geometry: a diagonal band, LeastEdge (halving) eating from the
+LSB/left and advancing right, MSB growing at high-c/right.
+
+## What the real automaton actually does
+
+Every number descends to 1. There is exactly one cycle (the trivial 1). So the
+persistent structures we "found" under x3 do NOT exist here - they were
+linearization artifacts. Concretely:
+
+- **Crystals are not special** (`images/collatz-hex-*.png`). x3-crystal seeds
+  descend in the SAME number of steps as random numbers of the same 1-density:
+  d=7 crystal 107 steps vs random-same-density 55-170; d=13 crystal 35 vs 58-173.
+  They fall inside the random band. So the CRT/denominator crystals, the traveling
+  crystals, the gliders, the domain walls, the compatibility atlas - all of those
+  were properties of the x3 map, not of the real automaton.
+
+- **No gliders, no left-movers, no traveling waves.** The real automaton is not a
+  linear map; a "pattern" is just part of a number that is descending. Nothing
+  persists or translates coherently - it all flows into the descent to 1.
+
+- **Edges (the survival balance).** MSB grows at log2(3) = 1.585 bits/odd-step
+  (from x3); the LeastEdge consumes at the average halving count v per step. Net =
+  1.585 - v. Measured: all-ones 2^50-1 v=1.824 (net -0.239), random v=1.984, sparse
+  v=2.046. Consumption always beats growth, so every number shrinks to 1. This is
+  the real-automaton form of "a pattern that can't grow left is eaten by the right":
+  survival needs v < 1.585, which no number sustains.
+
+- **Density of 1s = slow descent.** The one property that carries over intact.
+  all-ones 2^40-1 climbs first (v near 1) then descends over 191 odd steps; a
+  same-length sparse number takes 56; random 119. In hex the all-ones seed
+  (`collatz-hex-allones_240-1.png`) shows the solid climb region up top, the
+  Sierpinski carry texture, and the green LeastEdge consuming it - a striking
+  match to the record-holder family from the very first stopping-time graph.
+
+## What was ALWAYS about the real automaton (still valid, unchanged)
+
+The value-based results were never about x3 - they are about the Collatz function
+on integers (the odd trajectory = the rows of CA.CollatzStep). These stand as-is:
+the stopping-time log-x graph and its (a,b) recipe lattice / log2(3) quasicrystal;
+the 2-adic self-affine residual and the noise cascade; the transforms/shear/fold/
+wrap; the residue-class reductions/leaves/sieves; the half-machine growth and the
+cycle lower bounds; the left-edge = t*log2(3)+log2(a/d) instrument. These describe
+the descent statistics the hex renders show one trajectory at a time.
+
+## Bottom line
+
+On the real automaton there is no zoo of crystals and gliders - there is one
+behavior, descent to 1, whose rate is set by the density of 1s and whose statistics
+are the quasicrystal/2-adic structure we mapped. The x3 "bulk" is a genuine but
+DIFFERENT automaton (ca-mul3.js); its crystals are real about x3 and unreal about
+Collatz. The hex reproduction makes the distinction concrete: same questions, real
+rule, and the persistent-structure answers all collapse to "it descends."
