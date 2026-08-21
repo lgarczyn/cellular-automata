@@ -1329,3 +1329,13 @@ halvings per odd step - the high-growth / few-halving structures (the 2^k-1 fami
 and the traveling crystals whose phase velocity k > 2). That growth-vs-consumption
 balance, on the diagonalized CA WITH the right-side halving included, is the model
 the machine question actually lives in - and the one search not yet run.
+
+## Orientation convention (to stop the confusion)
+
+Lou's convention, used from here on: **MSB = LEFT, LSB = RIGHT.** The x3 growth
+front advances toward the MSB = leftward; the LSB edge is frozen on the right.
+matplotlib's default draws higher column index on the RIGHT, so unless the column
+axis is reversed, MSB lands on the right and growth *looks* like it expands right -
+which is backwards from this convention. Reverse the column axis (MSB-left) in every
+spacetime render. `images/collatz-diagonal-anchor.png` is corrected;
+`collatz-anchored.png` still uses MSB-right and should be flipped if revisited.
