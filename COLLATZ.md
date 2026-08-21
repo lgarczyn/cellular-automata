@@ -1,5 +1,99 @@
 # Collatz stopping times: peeling off the patterns
 
+> **READ THIS FIRST.** This file is a chronological lab notebook, errors and
+> retractions included on purpose. The authoritative conventions live in the
+> repo `CLAUDE.md`; the per-script scope classification lives in
+> `tools/MANIFEST.md`. The two sections immediately below summarize the
+> retrospective and the current program state; everything after them is the
+> historical record.
+
+## Retrospective: where the vocabulary kept breaking
+
+One session lost a lot of signal to the same few mismatches, repeatedly:
+
+1. **Model substitution.** "The automaton" means CA.CollatzStep in the hex
+   view. The assistant kept sliding to tractable proxies: pure x3 (linear, has
+   a complete theory), the integer value map, or modular rings. Every
+   "provably impossible" produced this way was a proxy theorem, and several
+   were later invalidated (localized left-movers "impossible" was only proved
+   for x3 linearity; the block-of-ones "fixed point" was an end-around-carry
+   artifact; "unit cells must be uniform" was just a too-small search).
+2. **Rows are not the state.** The machine state is 2 bits per cell
+   (digit, carry) on the antidiagonals t = r + c. Treating display rows as
+   integers erases the carry field and the whole off-shell state space.
+3. **Orientation and rendering.** MSB is LEFT. matplotlib defaults (MSB
+   right, stretched cells, seed transients shown) caused literal confusion
+   ("why are your graphs expanding to the right").
+4. **"Loop" is a window, not a modulus.** Looping a side means a periodic
+   simulation window into a giant CA. Translating it to mod 2^W-1 imported
+   number-theory artifacts that had nothing to do with the CA.
+5. **Persistence is not composition.** "The orbit closes eventually" was
+   repeatedly offered where "the composite keeps its parts' period and
+   sections" was asked for.
+6. **Priority inversion.** Requests of the form "try hard to build/find X"
+   were answered with impossibility proofs (in proxies) instead of serious
+   searches in the real system with pictures of best attempts. The user's
+   distrust was correct every time it was voiced.
+7. **Overcorrection at the end.** After the proxy errors were exposed, the
+   pendulum swung to "everything was an artifact, it all just descends".
+   Also mis-scoped: finite-seed stopping-time statistics do not refute
+   bulk-interior structure. In the "middle of an absurdly large number"
+   frame, x3-with-carry IS the correct local physics; the x3 results are
+   valid there and invalid as claims about global Collatz behavior. Scope
+   labels ([real-CA] / [x3-bulk] / [value] / [ring]) are now mandatory.
+
+## Program state: half machine and composable patterns
+
+**Half machine** (looping right side, free left edge). Done:
+- Definition pinned. Full cycles are excluded by the rational-slope iff cycle
+  argument and the sqrt(n) timing wall [value].
+- Half-open model [x3-bulk]: tail = repeating fraction a/d, head = integer
+  part. Head digit stream = base-3 expansion of a/d; MSB edge is exactly
+  t*log2(3) + log2(a/d) (universal slope, pattern sets only the offset); the
+  tail is untouchable (one-sided light cone).
+- Fuse law [value]: a prescribed periodic halving pattern on a d-bit tape
+  survives ~d steps (each odd step burns >= 1 LSB bit); all-ones is the
+  slowest burn (v=1); exchange rate of designed bits to carry bits is
+  log2(3) - 1 = 0.585 < 1, so no bootstrap.
+- Survival balance [real-CA]: net growth = log2(3) - vbar per odd step;
+  measured all-ones vbar ~ 1.8, random ~ 2.0; everything shrinks.
+
+Remaining:
+- The real object: a structure whose LeastEdge interface is periodic
+  ("runners") for as long as possible, in the hex CA. Search for tapes
+  sustaining low vbar beyond the all-ones transient; characterize what
+  extends the fuse; render candidates in hex.
+- Off-shell tapes: (digit, carry) configurations with free carries have
+  never been searched on the real rule.
+- Composite tails feeding one head (sums a/d1 + a/d2): trivial in Q/Z,
+  never rendered or checked at digit level.
+- Sustained vbar < log2(3) forever = a divergent trajectory = the open
+  Collatz problem. Realistic goal: maximal fuses and their structure.
+
+**Composable patterns.** Done [x3-bulk], valid there:
+- Catalogue: pattern = a/d with 3 not dividing d; spatial period ord_d(2),
+  temporal ord_d(3).
+- Superposition always composes (lcm). Concatenation obeys the charge law:
+  blocks compose iff A = B mod 3^{v3(2^{2L}-1)}; verified exhaustively
+  L <= 7, k <= 4; permanent domain walls exist at matching charge.
+- A^kB widening ladder controlled by v3(B - A); period-preserving ("true")
+  composition census: at L = 5, 7 every AB pair is true; at k = 3 only ABC;
+  A^(k-1)B never (primitive prime divisors of 2^kL - 1).
+- Traveling crystals: rigid shift iff 3 = 2^k mod d; left-movers exist
+  (d = 13, 29, 61); under the half-open boundary the tail slides left while
+  feeding the head.
+
+Remaining:
+- Re-express the atlas at the hex tile level on the real CA: what a composed
+  pattern looks like as tiles including carries; whether "charge" has a tile
+  meaning (conjecture: it is the carry field's 3-adic content).
+- The bridge question, never touched: when the LeastEdge front eats into a
+  composed tail, does the composition show up in the runner rhythm (the
+  v-sequence)? This links composition to the half machine.
+- k >= 3 weighted charge law (sum c_j u^j = 0): triples that compose while
+  their pairs do not; mapped nowhere yet.
+- Off-shell compositions (inconsistent carry fields): unexplored.
+
 ## The idea
 
 Plot total stopping time against input and you get a picture full of obvious

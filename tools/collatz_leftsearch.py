@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Exhaustive hunt for a LOCALIZED left-mover under the free-MSB bulk. None exist.
+"""Exhaustive hunt for a LOCALIZED left-mover under the free-MSB x3 bulk.
+
+SCOPE: [x3-bulk]. The impossibility argument is linearity of x -> 3x and does
+NOT apply to CA.CollatzStep (nonlinear via LeastEdge/+1). See tools/MANIFEST.md.
 
 Run: python3 tools/collatz_leftsearch.py     (uses all cores; ~30s on 16)
 

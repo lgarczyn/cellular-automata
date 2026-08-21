@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Scan the MSB region of random x3 orbits for emergent repeating patterns.
 
+SCOPE: [x3-bulk] (mantissa of 3^t). Not CA.CollatzStep.
+
 Run: python3 tools/collatz_msbscan.py     (all cores)
 
 Using random seeds, a periodic tail (looping right), and hundreds of thousands of

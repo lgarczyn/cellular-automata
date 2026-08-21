@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Glider search on the TRUE nonlinear (digit,carry) antidiagonal CA.
+"""Glider search on the x3-with-carry (digit,carry) antidiagonal CA.
+
+SCOPE: [x3-bulk]. This is NOT CA.CollatzStep (no LeastEdge, no +1). Its
+negative result binds only the x3 model; see tools/MANIFEST.md.
 
 Run: python3 tools/collatz_glidersearch.py     (all cores)
 
