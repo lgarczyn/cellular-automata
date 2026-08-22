@@ -30,6 +30,7 @@ Scope key:
 | collatz_feather.py | trajectory feather art |
 | collatz_protocol.py | hailstone-record protocol: climb classes n = (m<<(j+1))-1, pilot sweep, blocker list |
 | collatz_monster.py | THE MONSTER HUNT. Designed giants run exactly: 2^(2^20)-1 = 5,044,234 odd steps (peak 1,661,954 bits), 2^(2^22)-1 = 20,229,242 odd steps (peak 6,647,814 bits); both within 1e-7 of the K*log2(3) prediction. Searched champions PROVED class-maximal by exhaustive sweep: 48/16 -> 581, 64/32 -> 710, 80/48 -> 868 odd steps (delay 2324). odd/bit decays 12.10/11.09/10.85 -> 4.81: search bonus dies like ln(size), design scales linearly and without limit |
+| collatz_giantshape.py | [real-CA] shape of the giant: whole-life density map in the LeastEdge frame; verifies the climb closed form n_r = 3^r*2^(K-r)-1 (two sectors: 3^r digits left, untouched fuse right, boundary 1 cell/step, MSB edge 1.585) |
 | monster/ | C searchers behind the above: monster2.c (random hunt + overflow log), exh.c (exhaustive class sweep, u128 fast path + 512-bit fallback), recheck.c (512-bit exact recheck of discards), longrun.sh / exhrun.sh drivers, giant.py (exact all-ones giant) |
 
 ## x3-bulk results (true about x3 only; the "crystals/gliders zoo")

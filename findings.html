@@ -549,6 +549,22 @@
     "absolute record" here is a purchasing decision rather than a search.
     <span class="scope scope-value">[value]</span></p>
 
+  <figure class="fig">
+    <img src="images/collatz-giant-shape.png"
+         alt="Density map of the whole life of an all-ones seed, showing two sectors during the climb">
+    <figcaption>The giant is too large to draw cell by cell (about 7&times;10<sup>13</sup> cells),
+      but its design is scale-free, so the same machine at 1/64 the linear size is the same picture.
+      The climb has a closed form, verified rather than assumed:
+      <code>n<sub>r</sub> = 3<sup>r</sup>&thinsp;2<sup>K&minus;r</sup> &minus; 1</code>. That is two
+      sectors: the digits of <code>3<sup>r</sup></code> on the left (mottled, density 1/2) and the
+      untouched fuse of solid ones on the right (density 1), with the boundary walking left exactly
+      one cell per step while the MSB edge advances 1.585, so the body opens at 0.585 cells per step
+      for exactly K steps. Then the fuse is spent and the generic fall closes the body. Inset: real
+      cells at the sector boundary, no downsampling.
+      <span class="scope scope-real">[real-CA]</span>
+      <span class="file">images/collatz-giant-shape.png</span></figcaption>
+  </figure>
+
   <h3>Searched, and proved class-maximal</h3>
   <p>Classes <code>n = (m &lt;&lt; (j+1)) &minus; 1</code> leave exactly 31 free cargo bits, so
     each class is only <code>2<sup>30</sup></code> wide and could be swept exhaustively. A
