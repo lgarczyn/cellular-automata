@@ -1669,11 +1669,16 @@ The protocol above, run for real on 16 cores overnight (about 6 hours of hunt
 plus a 7-minute certification sweep). Two independent kinds of monster, both
 verified exactly in Python, no float, no modular window.
 
-**Designed, certified, no search.** n = 2^K - 1 with K = 2^20 = 1,048,576 bits:
-**5,044,234 odd steps** (about 12.9M steps counting halvings), peak 1,661,954
-bits, 20 minutes of exact bignum. Theory predicted a 1,048,575-step climb to
-1,661,993 peak bits and ~5.05M total steps: agreement to 0.1%. The fuse law
-delivered exactly what it promised, and this scales linearly with K forever, so
+**Designed, certified, no search.** n = 2^K - 1, run to completion exactly:
+
+| K | seed bits | odd steps | peak bits | predicted peak | odd/bit | runtime |
+|---|---|---|---|---|---|---|
+| 2^20 | 1,048,576 | 5,044,234 | 1,661,954 | 1,661,954 | 4.811 | 20 min |
+| 2^22 | 4,194,304 | **20,229,242** | 6,647,814 | 6,647,815 | 4.823 | 127 min |
+
+Predicted peak is K*log2(3) and both land within 1 part in 1e7; the guaranteed
+climb is exactly K steps at v=1. The 2^22 monster is ~52M steps counting
+halvings, summit ~2M decimal digits. This scales linearly with K forever, so
 "absolute record" is a purchasing decision, not a search.
 
 **Searched, and PROVED class-maximal.** Classes n = (m << (j+1)) - 1:

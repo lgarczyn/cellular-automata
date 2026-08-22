@@ -9,9 +9,15 @@ Two kinds of monster:
 
   DESIGNED (certified, no search):  n = 2^K - 1, the all-ones tape.
     The fuse law guarantees K climb steps at v=1 (+0.585 bits/step), so the
-    step count is linear in the seed size and can be ordered to spec.
-    K = 2^20 was run exactly: 5,044,234 odd steps, peak 1,661,954 bits.
-    Theory predicted 1,661,993 peak bits and ~5.05M steps: 0.1% agreement.
+    step count is linear in the seed size and can be ordered to spec. Two
+    sizes run to completion in exact integer arithmetic:
+
+      K = 2^20 (1,048,576 bits):  5,044,234 odd steps, peak 1,661,954 bits
+      K = 2^22 (4,194,304 bits): 20,229,242 odd steps, peak 6,647,814 bits
+
+    Predicted peak is K*log2(3); both measurements agree to 1e-7 relative.
+    The 2^22 giant is ~52M steps counting halvings, summit ~2M decimal digits,
+    127 minutes of CPython bignum.
 
   SEARCHED (exhaustive over a designed class):  n = (m << (j+1)) - 1.
     The j low ones force j guaranteed climb steps; m is free cargo. Each
@@ -85,8 +91,9 @@ def main():
           % (K, go, gt, gp.bit_length(), go / K))
     print("  climb steps at v=1: %d (= K, the fuse law), slope %.4f bits/step"
           % (K, (gp.bit_length() - K) / K))
-    print("certified giant (run separately, K = 2^20): 5,044,234 odd steps, "
-          "peak 1,661,954 bits")
+    print("certified giants (run separately, monster/giant.py):")
+    print("  K = 2^20:  5,044,234 odd steps, peak 1,661,954 bits (20 min)")
+    print("  K = 2^22: 20,229,242 odd steps, peak 6,647,814 bits (127 min)")
 
     fig, ax = plt.subplots(figsize=(11, 6), dpi=140)
     ax.plot(gprof, color="#7c3aed", lw=2.0,

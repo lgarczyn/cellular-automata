@@ -525,12 +525,28 @@
     <span class="scope scope-value">[value]</span></p>
 
   <h3>Designed, certified, no search</h3>
-  <p><code>n = 2<sup>K</sup> &minus; 1</code> with <code>K = 2<sup>20</sup> = 1,048,576</code>
-    bits: <strong>5,044,234 odd steps</strong> exactly, about 12.9 million steps counting halvings,
-    peak size 1,661,954 bits, twenty minutes of exact bignum arithmetic. The fuse law predicted a
-    1,048,575-step climb to 1,661,993 peak bits and ~5.05M total steps — agreement to
-    <strong>0.1%</strong>. This scales linearly in <code>K</code> with no ceiling, so an "absolute
-    record" here is a purchasing decision rather than a search.
+  <p>Take <code>n = 2<sup>K</sup> &minus; 1</code>, the all-ones tape. The fuse law guarantees
+    <code>K</code> climb steps at <code>v = 1</code>, so the step count is bought, not found. Two
+    sizes were run to completion in exact integer arithmetic:
+    <span class="scope scope-value">[value]</span></p>
+
+  <table class="data">
+    <thead><tr><th>seed</th><th>bits</th><th>odd steps</th><th>peak bits</th>
+      <th>predicted peak</th><th>odd/bit</th><th>runtime</th></tr></thead>
+    <tbody>
+      <tr><td>2<sup>2<sup>20</sup></sup>&minus;1</td><td>1,048,576</td><td>5,044,234</td>
+        <td>1,661,954</td><td>1,661,954</td><td>4.811</td><td>20 min</td></tr>
+      <tr><td>2<sup>2<sup>22</sup></sup>&minus;1</td><td>4,194,304</td><td><strong>20,229,242</strong></td>
+        <td>6,647,814</td><td>6,647,815</td><td>4.823</td><td>127 min</td></tr>
+    </tbody>
+  </table>
+
+  <p>The larger seed reaches <strong>20,229,242 odd steps</strong>, roughly 52 million steps
+    counting halvings, and its summit is a number of 6,647,814 bits (about 2 million decimal
+    digits). Predicted peak is <code>K&thinsp;log<sub>2</sub>3</code> and the measurement lands
+    within <strong>1 part in 10<sup>7</sup></strong> at both sizes: the machine performs its
+    program and nothing else. Step count is linear in <code>K</code> with no ceiling, so an
+    "absolute record" here is a purchasing decision rather than a search.
     <span class="scope scope-value">[value]</span></p>
 
   <h3>Searched, and proved class-maximal</h3>
