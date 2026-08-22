@@ -1859,3 +1859,60 @@ Bottom line: the left edge past the start column is the x3 mantissa flow,
 full stop. Its only patterns are the ones you aim into it, they are
 transient by nature (log2(3) is irrational: no periodic left edge exists),
 and they compose freely with everything on the right edge.
+
+## "Search a LOT more": the expanded left-edge hunt (2026-08-22, second pass)
+
+Lou pushed back on the first pass's tidy conclusion. He was right to. The
+expansion (new frames, new scales, new designed families) produced one
+CORRECTION, one confirmation at scale, and two new constructive laws.
+
+**CORRECTION - the front is a TIME QUASICRYSTAL, not noise**
+(`tools/collatz_river.py`, `images/collatz-river-quasicrystal.png`).
+The first pass scanned rows in tape alignment and z-scored per seed, which
+is blind to (a) structure aligned to the moving MSB front and (b) structure
+shared by ALL seeds. In the MSB-aligned frame, the front texture returns at
+lag m to a depth of -log2|frac(m*log2 3)| - 1 bits: sharp peaks at the
+continued-fraction convergent denominators of log2(3) - m = 12, 41, 53,
+306, 359, 665 - and the whole Ostrowski forest of their combinations.
+Measured depth = predicted depth to ~0.1 bit at every lag, on real runs,
+for every seed, seed-independent. Lag 665 aligns 13 leading bits. The
+left edge's "noise" has a complete quasi-periodic skeleton: it is the
+continued fraction of log2(3) made visible. The earlier flat "the river
+is noise" claim is retracted; correct statement: the river carries no
+PER-SEED structure (except aiming), but is universally quasi-periodic in
+time.
+
+**Confirmation at scale** (`tools/collatz_bigscan.py`). Stage 1: cheap
+per-row features (constant runs + exact periods 2-8) in BOTH frames, 14
+cores; thresholds at the random MAX (not a percentile). Stage 2: every hit
+mechanism-verified against the pure x3 flow (aim-error thresholds were
+dropped as vacuous - with many patterns P allowed, every integer is
+trivially "close to an aim"; the honest test is whether the synthetic
+flow reproduces the hit's structure scores).
+- exhaustive odd 23-bit (2,097,152 seeds, T=30): 2176 hits = 1834
+  mantissa-explained + 329 affine-tipped (the +1s completed a marginal
+  aim) + 13 broken by the +1s. Zero outside the mechanism.
+- random 400k x 48-bit, 150k x 96-bit, 30k x 256-bit, 5k x 700-bit
+  (T up to 500): 122 hits, ALL mantissa-explained (one tipped).
+No second per-seed mechanism exists at any scale probed.
+
+**New law 1 - a flash never dies** (`images/collatz-leftedge-echoes.png`).
+A designed crystallization at step k re-appears at k+12 (6 bits), k+53
+(8), k+106 (7), k+306 (8), k+359 (9), k+665 (14 bits) - measured on a
+real 537-bit run of 800 steps, matching the convergent depths. Pre-echoes
+exist too (k-12, k-53: the flash announces itself). The quasicrystal
+skeleton carries every aim through time in both directions.
+
+**New law 2 - the layer cake** (`images/collatz-leftedge-layercake.png`).
+Aims at separate tape heights are independent: n = sum of P_i*2^(g_i)/3^(k_i)
+layers (zero bands between) makes each layer crystallize at its own step
+k_i at its own height, after which its river refills the band above. The
+left half of the tape is a billboard with a schedule. Combined with the
+first pass: rhythm program on the right edge, flash schedule on the left
+edge, all on one integer, no interference.
+
+Method note, kept honest: the first pass's classifier ("structured seeds
+are P-aimed, err < threshold") was quietly circular at scale and was
+replaced by mechanism verification. And the null-field table stands:
+random, fuse, zoo words, 3-smooth, sparse - no per-seed left-edge
+signature; their fronts all ride the same universal quasicrystal.

@@ -18,6 +18,9 @@ Scope key:
 | collatz_render_compose.py | [real-CA] | hex figures for the above: collatz-compose-zoo / -wall / -triple.png, all cell-level CA.CollatzStep runs |
 | collatz_leftedge.py | [real-CA] | THE LEFT EDGE. Quantifier (zlib gain / autocorr / const-run, z vs random). LAW 1: above LeastEdge+40 the fresh region = pure x3 flow bit-for-bit (0 mismatches, max ripple 18); LAW 2: real vs synthetic scores agree with margin (the +1s can tip marginal aims at small size). Null field (random, fuse, zoo words, 3-smooth, sparse) = noise. Only structure = ternary aiming n ~ P*2^g/3^k: P crystallizes at step k, then its river. Exhaustive 18-bit scan (0.8% structured, all aims, 25x enrichment); hillclimb plateaus at z~4.6: design-only, no gradient |
 | collatz_render_leftedge.py | [real-CA] | hex figures: collatz-leftedge-crystal / -both / -quantifier.png |
+| collatz_river.py | [real-CA] | THE FRONT IS A TIME QUASICRYSTAL: MSB-aligned rows agree to -log2\|frac(m*log2 3)\|-1 bits at lag m; peaks at CF convergents 12/41/53/306/359/665 (13 bits at 665); measured = predicted to 0.1 bit, universal, seed-independent. Retracts the flat "river is noise" claim (tape-frame artifact) |
+| collatz_bigscan.py | [real-CA] | the big left-edge scan: 2.1M exhaustive 23-bit + 585k random at 48/96/256/700 bits, both frames, 14 cores; every hit mechanism-verified vs the pure x3 flow: all mantissa-explained or affine-tipped, no second per-seed mechanism |
+| collatz_render_river.py | [real-CA] | figures: collatz-river-quasicrystal / -leftedge-echoes (a flash echoes at +12/+53/+306/+665, depths as predicted) / -leftedge-layercake.png (independent aims at separate heights) |
 
 ## Valid value-map results (statistics of real trajectories)
 | script | what |
