@@ -1662,3 +1662,38 @@ bootstrap), the 0.585 exchange rate (carries are hash), fall genericity (luck
 designed bit ceiling), and the fact that beating that ceiling forever IS the
 divergence problem. Designed giants give certified absolute records (linear in
 seed size); the small-n ratio records are luck and cannot scale.
+
+## The monster hunt: executed (`tools/collatz_monster.py`)
+
+The protocol above, run for real on 16 cores overnight (about 6 hours of hunt
+plus a 7-minute certification sweep). Two independent kinds of monster, both
+verified exactly in Python, no float, no modular window.
+
+**Designed, certified, no search.** n = 2^K - 1 with K = 2^20 = 1,048,576 bits:
+**5,044,234 odd steps** (about 12.9M steps counting halvings), peak 1,661,954
+bits, 20 minutes of exact bignum. Theory predicted a 1,048,575-step climb to
+1,661,993 peak bits and ~5.05M total steps: agreement to 0.1%. The fuse law
+delivered exactly what it promised, and this scales linearly with K forever, so
+"absolute record" is a purchasing decision, not a search.
+
+**Searched, and PROVED class-maximal.** Classes n = (m << (j+1)) - 1:
+
+| class | n | odd | delay | peak bits | odd/bit |
+|---|---|---|---|---|---|
+| 48/16 | 268726926180351 | 581 | 1550 | 62 | 12.10 |
+| 64/32 | 12503150712101797887 | 710 | 1899 | 86 | 11.09 |
+| 80/48 | 1188923081869663116722175 | 868 | 2324 | 113 | 10.85 |
+
+Each class leaves exactly 31 cargo bits, so it is only 2^30 wide. The random
+hunt (~290e9 trials) and a deterministic sweep of every single m returned the
+SAME three champions, so these are class maxima, not lucky draws. Cross-check
+that the coverage was genuine: the exhaustive sweep found 5485 seeds in the
+80/48 class that exceed 2^125, and the random hunt had logged exactly 5485
+distinct such seeds. All 5485 were rerun at 512-bit precision: best 729 odd
+steps, below the champion, so the discarded high-climbers hid nothing.
+
+**What it confirms.** odd/bit falls monotonically with size (12.10, 11.09,
+10.85, then 4.81 for the giant): the search bonus decays like ln(effort) while
+the designed floor stays at ~4.82 steps per designed bit. Design gives
+unbounded totals; search gives a shrinking rate premium at small size only.
+Every blocker listed in the protocol section held, quantitatively.

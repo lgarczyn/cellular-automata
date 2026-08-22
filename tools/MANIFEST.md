@@ -28,6 +28,9 @@ Scope key:
 | collatz_halfrun.py | half machine as fuse: prescribed halving patterns, ~1 bit/step burn, exchange rate log2(3)-1 |
 | collatz_runners.py | runner-rhythm lifting + exact fuse law: v-prefix (sum S) = one class mod 2^(S+1); overshoot = 2-adic agreement with rational runner C/(2^S-3^l), geometric tail, 0 exceptions in 640k trials; hex figure of best fuse is [real-CA] |
 | collatz_feather.py | trajectory feather art |
+| collatz_protocol.py | hailstone-record protocol: climb classes n = (m<<(j+1))-1, pilot sweep, blocker list |
+| collatz_monster.py | THE MONSTER HUNT. Designed giant 2^(2^20)-1 = 5,044,234 odd steps exact (peak 1,661,954 bits, 0.1% off theory). Searched champions PROVED class-maximal by exhaustive sweep: 48/16 -> 581, 64/32 -> 710, 80/48 -> 868 odd steps (delay 2324). odd/bit decays 12.10/11.09/10.85 -> 4.81: search bonus dies like ln(size), design scales linearly and without limit |
+| monster/ | C searchers behind the above: monster2.c (random hunt + overflow log), exh.c (exhaustive class sweep, u128 fast path + 512-bit fallback), recheck.c (512-bit exact recheck of discards), longrun.sh / exhrun.sh drivers, giant.py (exact all-ones giant) |
 
 ## x3-bulk results (true about x3 only; the "crystals/gliders zoo")
 collatz_bulk.py, collatz_build.py, collatz_atlas.py (composition charge law),
