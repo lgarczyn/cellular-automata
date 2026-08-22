@@ -14,6 +14,8 @@ Scope key:
 | collatz_bridge.py | [real-CA]+[value] | the bridge: composed tails vs LeastEdge rhythm. Crystal tails = exactly periodic v-seq (2-adic ideal); block boundary located by rhythm to the bit; x3 charge has NO rhythm effect (\|d\| <= 0.1); domain walls radiate a universal ~log2(3) bits/step disorder wedge, charge-blind |
 | collatz_offshell.py | [real-CA] | antidiagonal (t=r+c) slice machine, verified cell-exact vs collatz_real; off-shell census: older-slice carries are dead state, flips instantly re-seed another integer's shell (1 broken link), low-bit flips coalesce back, void digit seeds = transient x3 ghosts, void LE seeds boot a parasite machine that caps and consumes the host; no persistent off-shell soliton |
 | reproduce_all.py | [real-CA]+[value] | E1..E14 proof-of-work reproduction; NOTE: E5/E14 test finite-seed stopping times, they do not probe bulk-interior structure |
+| collatz_compose.py | [real-CA] | THE BLOCK ZOO + SPLICE LAW. Growing blocks = negative 2-adic rational cycles x = c/(2^S-3^l), 2^S < 3^l: word+right-edge motif = the rational's expansion, rhythm = its cycle. 70 blocks (l<=7) all realized as integer tapes and rhythm-locked in the real system. Raw-cut composition = basin of the wall rational (exact, 0/360 exceptions; almost always decay). Designed splice (preimage of A's cycle under B's rhythm) composes ANY over ANY with zero transient; runner law forces the wall digits to be B's own word |
+| collatz_render_compose.py | [real-CA] | hex figures for the above: collatz-compose-zoo / -wall / -triple.png, all cell-level CA.CollatzStep runs |
 
 ## Valid value-map results (statistics of real trajectories)
 | script | what |

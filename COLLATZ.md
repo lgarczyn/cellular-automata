@@ -109,6 +109,12 @@ Remaining / resolved:
   forbidden pairs. Verified by simulation.
 - Off-shell compositions: subsumed by the off-shell sweep (on-shell attractor;
   nothing persistent to compose).
+- The real-CA tile/front bridge: RESOLVED (2026-08-22,
+  `tools/collatz_compose.py`, last section of this file). Growing blocks =
+  negative 2-adic rational cycles (70 for l <= 7, all realized and locked in
+  the real system); raw cuts almost never compose (handoff = basin of the
+  wall rational, exact, 0/360 exceptions); the computed-preimage splice
+  composes ANY block over ANY block with zero transient.
 
 ## The idea
 
@@ -1702,3 +1708,91 @@ steps, below the champion, so the discarded high-climbers hid nothing.
 the designed floor stays at ~4.82 steps per designed bit. Design gives
 unbounded totals; search gives a shrinking rate premium at small size only.
 Every blocker listed in the protocol section held, quantitatively.
+
+## Composable blocks in the real CA: the zoo and the splice law (2026-08-22, `tools/collatz_compose.py`)
+
+The actual assignment behind "find the monster machine", restated by Lou:
+find LEFT EDGE + REPEATING PATTERN + RIGHT EDGE triples that are more
+efficient than normal - spread left, slow the right, and above all COMPOSE.
+Not numbers: tiles. The number is only recovered by walking back from the
+row. Everything below is [real-CA]: every claim is realized as an integer
+tape and run in CA.CollatzStep semantics (one composed tape re-verified
+cell-by-cell against `collatz_real.run`).
+
+**The identification that organizes everything.** In tape coordinates the
+interior of any zone evolves under PURE x3 at fixed positions - the +1
+injections never reach it (their influence stays within O(log T) of the
+LeastEdge; this is the void-sector physics again, now in the interior). So:
+
+- a repeating word + its right-edge termination motif IS a 2-adic rational
+  x (eventually periodic expansion = rational with odd denominator);
+- the rhythm at the LeastEdge is the Collatz orbit of x;
+- "the pattern persists" = x is on a CYCLE of the Collatz map on rationals:
+  x = c/(2^S - 3^l) for its rhythm (v_1..v_l), sum S;
+- "spreads left" = vbar = S/l < log2(3) = 2^S < 3^l = NEGATIVE denominator:
+  a growing block is a negative 2-adic rational. "We are in the middle of a
+  giant number" is literal: the giant is -c/(3^l - 2^S).
+
+**The zoo** (`collatz-compose-zoo.png`). Enumerating all rhythms l <= 7 with
+vbar < log2(3): 70 distinct cycles, every one realized and rhythm-locked in
+the real system exactly as long as predicted (0 failures). Highlights:
+
+| block | word q | density | rhythm | eats | net growth |
+|---|---|---|---|---|---|
+| d1 (fuse) | 1 | 1.00 | 1 | 1.000 | +0.585 |
+| d11 | 10 | 0.50 | 1,1,2 | 1.333 | +0.252 |
+| d49 | 21 | 0.48 | 1,1,1,2 | 1.250 | +0.335 |
+| d179 | 178 | 0.50 | 1,1,1,1,2 | 1.200 | +0.385 |
+| d601 | 25 | 0.36 | 1,1,1,1,1,2 | 1.167 | +0.418 |
+| d1931 | 1930 | 0.50 | 1,1,1,1,1,1,2 | 1.143 | +0.442 |
+| d31 | 5 | 0.20 | 1,1,1,1,1,4 | 1.500 | +0.085 |
+| d139 family | 138 | 0.50 | e.g. 1,1,3,1,2,1,2 | 1.571 | +0.014 |
+
+Every block eats slower than the generic 2 cells/step: all "more efficient
+than normal". The fuse stays the extremum (v >= 1 is hard, and x = -1 is the
+unique 2-adic fixed point of (3x+1)/2), but the frontier rhythm (l+1 ones
+then one 2... i.e. 1^l,2) approaches fuse-grade growth with HALF-density
+words; d601 sustains +0.42 bits/step with a word that is only 36% ones.
+Integer cycles (-1, -5, -17) are exactly the blocks with the all-ones word
+and exotic right-edge motifs; the rational cycles are the genuinely new
+spatial textures (d11 diagonal weave, d217 triangle lace, d31 sparse bands).
+
+**Raw cuts almost never compose** (`collatz-compose-wall.png`, top). Butting
+A's words straight onto B's block: B's rhythm is exact until the LeastEdge
+crosses the wall, then the orbit is thrown out of every cycle basin and the
+pattern decays at generic eating (~1.8-2.0 cells/step). Matrix over 6
+representative blocks x every wall phase, with an honest classifier (a lock
+must persist until the designed tape is exhausted): self-composition is
+seamless ONLY at word phase 0; cross-block raw cuts essentially never lock,
+and the rare captures (d11-over-d31, d49-over-d31) take 80-121 scrambled
+steps first - persistence, not composition.
+
+**The law is exact.** The handoff class equals the basin of the wall's
+2-adic value under the Collatz map on rationals, computed in exact
+arithmetic: 0/360 disagreements between the prediction and the real runs
+once the tape is long enough to outlast the predicted transient. The
+"domain wall radiation" of the earlier bridge section is, at the LeastEdge,
+just basin escape - deterministic and computable, not noise.
+
+**The splice law** (`collatz-compose-wall.png` bottom, and the three-block
+program in `collatz-compose-triple.png`). ANY block composes over ANY block
+with ZERO transient if the wall is computed instead of cut: take A's cycle
+rational and pull it back through `periods` full periods of B's rhythm
+(exact preimages z -> (z*2^v - 1)/3). The runner law then FORCES the low S
+digits to be B's own word - B's identity cannot be disturbed - and the
+handoff lands exactly on A's cycle. Verified for pairs in both orders and
+for the three-block program d11 -> d49 -> d31 (74 steps, both walls
+zero-transient, every rhythm section exact). Cost, stated honestly: above
+the wall the upper block initially sits DRESSED - its digits are the
+x3-preimage of its word (denominator d*3^w) - and anneals into its visible
+word exactly when its turn comes. Raw cut shows the word immediately but
+dies at the wall; the splice hides the word until the wall and lives. The
+tape is a program: rhythm sections are compiled back-to-front by preimage,
+and the sea executes them in order.
+
+Scope notes: exact rationals are the design tool; nothing is claimed from
+them alone - each construction is a finite integer run in the real
+dynamics. A finite tape still decays after its program ends (sustained
+growth forever = the open problem, untouched). Images:
+`collatz-compose-zoo.png`, `collatz-compose-wall.png`,
+`collatz-compose-triple.png`.
