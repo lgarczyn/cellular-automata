@@ -1796,3 +1796,66 @@ dynamics. A finite tape still decays after its program ends (sustained
 growth forever = the open problem, untouched). Images:
 `collatz-compose-zoo.png`, `collatz-compose-wall.png`,
 `collatz-compose-triple.png`.
+
+## The left edge: noise vs pattern past the start column (2026-08-22, `tools/collatz_leftedge.py`)
+
+Right edge done (blocks, splices); this is the other edge. Question as
+posed: find a quantifier separating noise from pattern, then deep-search for
+seeds that put anything other than noise in the territory PAST the seed's
+own leftmost column. Everything [real-CA]: real runs, with the pure-x3
+comparison used only as a verified law, not a substitute.
+
+**Quantifier.** Three features of the fresh region (tape cells at absolute
+positions >= the seed's MSB), z-scored against random seeds of the same
+size: zlib compression gain vs within-row shuffles, mean per-row max
+autocorrelation, mean per-row longest constant run. Random seeds sit at
+|z| < 3; threshold z > 5.
+
+**Physics laws, verified before searching.**
+- LAW 1 (exact): above LeastEdge + 40 cells the fresh region is bit-for-bit
+  the pure x3 flow - cell (row r, position p) = bit p of 3^r * n. 300 seeds
+  x 30 rows, 35,590 cells, 0 mismatches. The +1 carries live at the sea:
+  the highest ripple ever observed reached 18 cells above the LeastEdge.
+  So the left edge is the ARCHIMEDEAN (real-mantissa) side of the machine,
+  as the right edge is the 2-adic side.
+- LAW 2 (no CA magic): with adequate tape thickness the quantifier gives
+  the same score to the real region and the synthetic pure-x3 region
+  (96-bit seeds: max |dz| = 1.6 over 53 seeds incl. all structured ones).
+  At small thickness the affine correction C_r (from the +1s) can tip a
+  marginal aim - literally 0111111... -> 1000000... - so tiny seeds can be
+  structured in the real CA while their raw x3 flow is not. The CA neither
+  creates nor destroys left-edge structure beyond this near-sea tipping.
+
+**The null field is really null.** Random seeds, the fuse, every zoo block
+word (d11, d49, d31, d217), 3-smooth seeds, and sparse seeds: ALL noise
+(|z| < 2). Nothing we built for the right edge leaves any signature past
+the start column. Sparse seeds' void wedges live BELOW the start column,
+outside the region.
+
+**The one structure mechanism: ternary aiming.** n ~ P * 2^g / 3^k with
+low-complexity P. Then row r of the fresh territory is the leading-bit
+field of P / 3^(k-r): the region anneals through the ternary words
+(...000111000111..., ...0101...), crystallizes into P surrounded by a zero
+field exactly at step k, then P's own x3 river regrows at 1.585 cells/step.
+Verified constructively at z ~ 12-19 (96-bit seeds; unbounded with size).
+Images: `collatz-leftedge-crystal.png` (P=1: pure crystallization),
+`collatz-leftedge-both.png` (BOTH edges programmed on one tape: d11 rhythm
+right, P=101101 materializing left, zero interference - halvings never
+touch the mantissa, the mantissa never touches the rhythm).
+
+**Deep search agrees and finds nothing else.**
+- Exhaustive scan of every odd 18-bit seed (31,658), 22 steps: 251
+  structured (0.8%). The top of the list is entirely P-aimed (P = 1, 13,
+  17, 45, 51, 63... at k <= 19); aiming enriches structure ~25x over the
+  base rate (`collatz-leftedge-quantifier.png`); the remaining structured
+  seeds are aims of the affine flow (LAW 2 tipping), same mechanism.
+- Hill-climbing on 96-bit seeds (24 restarts x 320 flips) plateaus at
+  z ~ 4.6: the aimed set is measure-zero and gradient-free. Its best
+  climber had in fact stumbled onto a weak aim (err 1e-4 at k=6). Search
+  cannot find the left-edge patterns; they must be designed - the same
+  design-beats-search law as the monster hunt, now on the other edge.
+
+Bottom line: the left edge past the start column is the x3 mantissa flow,
+full stop. Its only patterns are the ones you aim into it, they are
+transient by nature (log2(3) is irrational: no periodic left edge exists),
+and they compose freely with everything on the right edge.

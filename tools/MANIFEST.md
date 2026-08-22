@@ -16,6 +16,8 @@ Scope key:
 | reproduce_all.py | [real-CA]+[value] | E1..E14 proof-of-work reproduction; NOTE: E5/E14 test finite-seed stopping times, they do not probe bulk-interior structure |
 | collatz_compose.py | [real-CA] | THE BLOCK ZOO + SPLICE LAW. Growing blocks = negative 2-adic rational cycles x = c/(2^S-3^l), 2^S < 3^l: word+right-edge motif = the rational's expansion, rhythm = its cycle. 70 blocks (l<=7) all realized as integer tapes and rhythm-locked in the real system. Raw-cut composition = basin of the wall rational (exact, 0/360 exceptions; almost always decay). Designed splice (preimage of A's cycle under B's rhythm) composes ANY over ANY with zero transient; runner law forces the wall digits to be B's own word |
 | collatz_render_compose.py | [real-CA] | hex figures for the above: collatz-compose-zoo / -wall / -triple.png, all cell-level CA.CollatzStep runs |
+| collatz_leftedge.py | [real-CA] | THE LEFT EDGE. Quantifier (zlib gain / autocorr / const-run, z vs random). LAW 1: above LeastEdge+40 the fresh region = pure x3 flow bit-for-bit (0 mismatches, max ripple 18); LAW 2: real vs synthetic scores agree with margin (the +1s can tip marginal aims at small size). Null field (random, fuse, zoo words, 3-smooth, sparse) = noise. Only structure = ternary aiming n ~ P*2^g/3^k: P crystallizes at step k, then its river. Exhaustive 18-bit scan (0.8% structured, all aims, 25x enrichment); hillclimb plateaus at z~4.6: design-only, no gradient |
+| collatz_render_leftedge.py | [real-CA] | hex figures: collatz-leftedge-crystal / -both / -quantifier.png |
 
 ## Valid value-map results (statistics of real trajectories)
 | script | what |
