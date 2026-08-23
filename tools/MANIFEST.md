@@ -25,6 +25,7 @@ Scope key:
 | leftscan/ | [real-CA] | C scanners: leftscan.c (4-channel bits-of-evidence: tape rows, front rows, fixed-column time-periodicity, per-seed quasicrystal anomaly; calib at random-max), runall.sh (exhaustive 2^31 32-bit + 2e9 random 64-bit, 16 shards), giantladder.c (libgmp.so direct-ABI runner: 4,573,972-bit tape, 10,590,781 odd steps, echo at lag 10,590,737 = 24 bits vs 22.7 predicted, 977 s) |
 | collatz_verifyhits.py | [real-CA] | stage 2 for leftscan: mechanism verification of every hit vs the pure x3 flow + vertical-anomaly re-check |
 | collatz_render_ladder.py | [real-CA] | figure: collatz-echo-ladder.png (measured vs predicted echo depth at all 10 convergent rungs) |
+| collatz_render_wild.py | [real-CA] | portraits of the scan's finds: collatz-wild-aims.png (the most crystalline seeds in the whole 32-bit universe + best of 2e9 random 64-bit), collatz-tipped.png (the +1 carries flip an aim's polarity: ones flow -> zeros machine), collatz-echo-closeup.png (echo rows at bit level vs their noise neighbors) |
 
 ## Valid value-map results (statistics of real trajectories)
 | script | what |

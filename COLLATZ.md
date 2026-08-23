@@ -1959,3 +1959,17 @@ still readable TEN AND A HALF MILLION steps later, 24 bits deep, after
 the tape has burned from 4.57M bits down to 172k. The flash is not a
 transient that decays; it is a resonance of the continued fraction that
 the machine carries as long as the tape lives.
+
+Postscript with faces (`tools/collatz_render_wild.py`): the specimens
+themselves. `collatz-wild-aims.png` - the most crystalline seeds that EXIST
+among all 2^31 odd 32-bit integers (champion n = 3,967,855,899: natural
+P=1 flash at step 19 with a 23-bit field; runner-up n = 3,086,110,143:
+P=110 at step 21) and the best of 2e9 random 64-bit seeds
+(n = 11,208,289,882,178,220,493: P=1 at step 32). Nobody aimed them; they
+are where the mantissa flow happens to graze a power of 2.
+`collatz-tipped.png` - the affine tipping cell by cell (n = 145,471): the
+pure flow crystallizes as ONES (2^g - eps), the real machine's +1 carries
+tip it over into ZEROS: same crystal, opposite polarity, visible only in
+the real dynamics. `collatz-echo-closeup.png` - echo rows at bit level:
+at exactly +665 / +15,601 / +190,537 the leading bits collapse back to the
+flash's field; one step to either side is generic river.
