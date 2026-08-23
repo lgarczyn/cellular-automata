@@ -1973,3 +1973,78 @@ tip it over into ZEROS: same crystal, opposite polarity, visible only in
 the real dynamics. `collatz-echo-closeup.png` - echo rows at bit level:
 at exactly +665 / +15,601 / +190,537 the leading bits collapse back to the
 flash's field; one step to either side is generic river.
+
+## The big-tape campaign: 168 million large automata (2026-08-23, `tools/leftscan/bigtape.c`)
+
+Lou: the interesting territory is 1000+ bits. Scanner rebuilt on bignum
+(direct-ABI libgmp), four channels re-tooled for scale: front-64 rows,
+BASE-WINDOW rows (bits at fixed absolute height [b0, b0+64) just past the
+start column - genuinely distinct from the front on big tapes), base-window
+time-columns, and the per-seed quasicrystal anomaly. Bits-of-evidence
+scoring, thresholds at the random maximum per configuration.
+
+Method note (a real bug, caught and fixed): the vertical-anomaly channel is
+an almost deterministic constant (~1.15032) at large row counts - the
+universality of the quasicrystal again - and printing its calibration
+maximum at 4 decimals ROUNDED IT DOWN below the population median, which
+made 95% of seeds "hits". Threshold now carries a +0.05 margin; any true
+per-seed anomaly would clear it by orders.
+
+Results (T = 900 / 1800 / 3600 odd steps):
+- 136,000,000 x 1024-bit: 88 hits, ALL mantissa-explained (0 tipped, 0
+  lost) after fixing the verifier to gate real and pure flows on the same
+  row set.
+- 25,600,000 x 4096-bit: 87 hits, ALL mantissa-explained.
+- 6,400,000 x 16384-bit: 55 hits, all the column channel's null tail,
+  all reproduced by the pure flow.
+Champions are exactly the extreme-value prediction: ~34-37 bits of
+constant field, i.e. the best natural aims that a sample of this size
+should contain, and nothing more. The specimens:
+- `collatz-bigwild-b1k.png`: front champion of the 1024-bit universe -
+  a natural ~40-bit zero wedge opening at step 819 of a 900-step-old tape.
+- `collatz-bigwild-b1k-stripe.png` and `collatz-bigwild-b4k-stripe.png`:
+  BASE-WINDOW champions - natural crystallizations pinned at fixed height
+  just past the start column: wild layer-cake stripes, the large-tape
+  structure the small scans could not have seen. Both reproduced exactly
+  by the pure x3 flow at those heights.
+
+Standing total for the left-edge program: ~4.3 BILLION seeds from 18 to
+16,384 bits, three frames, seven channels across passes: every structured
+seed is an archimedean aim (mantissa or affine-tipped); the only universal
+structure is the continued-fraction skeleton. The left edge holds nothing
+else, and at Lou's requested scale the wild aims now come with 34-40 bit
+crystal moments - big enough to see from across the room.
+
+## Bulk physics on kilobit tapes (2026-08-23, `tools/collatz_bulkphysics.py`)
+
+Lou, on the big-scan champions: "random large wedges are not super
+interesting though." Correct - they are the extreme-value tail of a known
+null. What kilobit tapes are actually FOR is room: designed objects living
+hundreds of cells from both edges. Two experiments, both [real-CA]:
+
+**The bulk light cone** (`collatz-bulk-lightcone.png`). Flip one bit at
+position 600 of a 1200-bit tape and XOR the two real runs. The influence
+wedge climbs at measured 1.5891 cells/step (log2 3 = 1.5850) - EXACTLY
+parallel to the MSB front, at constant lag behind it forever: the bulk can
+never catch the left edge (the difference of the two runs is exactly
+3^r * 2^600 while the rhythms agree, and its top runs parallel to the
+front). The wedge floor stays pinned at the flipped bit until the
+LeastEdge arrives at step 291; then the rhythm forks and everything above
+the sea rewrites - yet even the forked futures stay inside the same
+1.585 cone. One picture states the machine's causal structure: influence
+travels left at exactly log2(3), the front is causally out of reach from
+inside, and the only way a bulk cell changes the future is to WAIT for
+the sea to read it.
+
+**Bulk gliders, alive** (`collatz-bulk-gliders.png`). The x3 traveling
+crystals (rigid texture shift iff 3 = 2^k mod d, from the atlas) had only
+ever been seen in the x3-bulk model or as void-sector transients. On a
+1,181-bit real tape there is room to stage them mid-tape: a d=13 band
+(word of 1/13, period 12) above a d=5 band (word of 1/5, period 4).
+Measured phase velocities in the real machine: 3 cells/step for d=5
+(3 = 2^3 mod 5) and 4 cells/step for d=13 (3 = 2^4 mod 13) - both FASTER
+than the 1.585 envelope; the texture races through its own light cone
+(phase vs group velocity, literally). Where the lower band's envelope
+reaches the upper band the carries braid them into a mixing wedge; the
+pure stripes survive above it until the sea ends the show. The zoo now
+has live bulk fauna in the real automaton, not just in the proxy.
