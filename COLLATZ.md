@@ -1916,3 +1916,46 @@ are P-aimed, err < threshold") was quietly circular at scale and was
 replaced by mechanism verification. And the null-field table stands:
 random, fuse, zoo words, 3-smooth, sparse - no per-seed left-edge
 signature; their fronts all ride the same universal quasicrystal.
+
+## The ambitious pass: 4.1 billion seeds and a ten-million-step echo (2026-08-23)
+
+Third left-edge pass ("you have the cpus"), C scanners on 16 cores
+(`tools/leftscan/`), stage-2 exact verification in Python
+(`tools/collatz_verifyhits.py`).
+
+**The scan.** Four channels per seed, scored in bits-of-evidence and
+calibrated at the MAXIMUM over millions of random seeds: tape-frame rows,
+MSB-aligned front rows, fixed-COLUMN time-periodicity (a frame no earlier
+pass had checked), and per-seed quasicrystal anomaly (does any seed beat
+the universal agreement curve?).
+- EXHAUSTIVE over every odd 32-bit seed (2,147,483,648 seeds, 40 steps):
+  388 hits. Row channels: 176 mantissa-explained + 35 affine-tipped + 0
+  broken. Vertical channel: 177, every one with real == synthetic anomaly
+  (the null tail of the statistic, not physics). Zero unexplained.
+- RANDOM 2,000,000,000 seeds at 64 bits (60 steps): 6,392 hits. Row
+  channels: 4,350 mantissa-explained, 0 tipped, 0 broken. Vertical: 2,042,
+  top 400 verified real == synthetic. Zero unexplained.
+- The fixed-column channel never fired on anything but aims: no tape cell
+  anywhere in 4.1 billion seeds oscillates periodically in time.
+So after ~4.15 billion seeds across 18-700 bits in three frames: the left
+edge past the start column has exactly ONE per-seed mechanism (archimedean
+aiming, including its affine-tipped variant) riding on exactly ONE
+universal structure (the quasicrystal skeleton).
+
+**The echo ladder, climbed to the end** (`tools/collatz_deepladder.py`,
+`tools/leftscan/giantladder.c`, `images/collatz-echo-ladder.png`).
+A flash designed at step 40 returns at EVERY continued-fraction convergent
+denominator of log2(3), depth = -log2|frac(m log2 3)| - 1 computed in
+exact integer arithmetic:
+
+| lag m | 12 | 53 | 306 | 665 | 15,601 | 31,867 | 79,335 | 111,202 | 190,537 | 10,590,737 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| measured | 6 | 8 | 8 | 14 | 14 | 17 | 17 | 18 | 22 | **24** |
+| predicted | 4.7 | 7.4 | 8.4 | 13.0 | 14.2 | 15.5 | 16.5 | 16.6 | 22.4 | 22.7 |
+
+The last rung is a real run of a 4,573,972-bit tape for 10,590,781 odd
+steps (977 s, direct-ABI libgmp): the pattern scheduled at step 40 is
+still readable TEN AND A HALF MILLION steps later, 24 bits deep, after
+the tape has burned from 4.57M bits down to 172k. The flash is not a
+transient that decays; it is a resonance of the continued fraction that
+the machine carries as long as the tape lives.

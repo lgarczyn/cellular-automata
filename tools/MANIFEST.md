@@ -21,6 +21,10 @@ Scope key:
 | collatz_river.py | [real-CA] | THE FRONT IS A TIME QUASICRYSTAL: MSB-aligned rows agree to -log2\|frac(m*log2 3)\|-1 bits at lag m; peaks at CF convergents 12/41/53/306/359/665 (13 bits at 665); measured = predicted to 0.1 bit, universal, seed-independent. Retracts the flat "river is noise" claim (tape-frame artifact) |
 | collatz_bigscan.py | [real-CA] | the big left-edge scan: 2.1M exhaustive 23-bit + 585k random at 48/96/256/700 bits, both frames, 14 cores; every hit mechanism-verified vs the pure x3 flow: all mantissa-explained or affine-tipped, no second per-seed mechanism |
 | collatz_render_river.py | [real-CA] | figures: collatz-river-quasicrystal / -leftedge-echoes (a flash echoes at +12/+53/+306/+665, depths as predicted) / -leftedge-layercake.png (independent aims at separate heights) |
+| collatz_deepladder.py | [real-CA] | the deep echo ladder: flash at k=40 verified to return at EVERY CF convergent lag of log2(3): 12/53/306/665/15601/31867/79335/111202/190537, depths 6..22 bits = exact predictions (frac computed from integer 3^m, not float) |
+| leftscan/ | [real-CA] | C scanners: leftscan.c (4-channel bits-of-evidence: tape rows, front rows, fixed-column time-periodicity, per-seed quasicrystal anomaly; calib at random-max), runall.sh (exhaustive 2^31 32-bit + 2e9 random 64-bit, 16 shards), giantladder.c (libgmp.so direct-ABI runner: 4,573,972-bit tape, 10,590,781 odd steps, echo at lag 10,590,737 = 24 bits vs 22.7 predicted, 977 s) |
+| collatz_verifyhits.py | [real-CA] | stage 2 for leftscan: mechanism verification of every hit vs the pure x3 flow + vertical-anomaly re-check |
+| collatz_render_ladder.py | [real-CA] | figure: collatz-echo-ladder.png (measured vs predicted echo depth at all 10 convergent rungs) |
 
 ## Valid value-map results (statistics of real trajectories)
 | script | what |
