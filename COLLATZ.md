@@ -1,0 +1,2050 @@
+# Collatz stopping times: peeling off the patterns
+
+> **READ THIS FIRST.** This file is a chronological lab notebook, errors and
+> retractions included on purpose. The authoritative conventions live in the
+> repo `CLAUDE.md`; the per-script scope classification lives in
+> `tools/MANIFEST.md`. The two sections immediately below summarize the
+> retrospective and the current program state; everything after them is the
+> historical record.
+
+## Retrospective: where the vocabulary kept breaking
+
+One session lost a lot of signal to the same few mismatches, repeatedly:
+
+1. **Model substitution.** "The automaton" means CA.CollatzStep in the hex
+   view. The assistant kept sliding to tractable proxies: pure x3 (linear, has
+   a complete theory), the integer value map, or modular rings. Every
+   "provably impossible" produced this way was a proxy theorem, and several
+   were later invalidated (localized left-movers "impossible" was only proved
+   for x3 linearity; the block-of-ones "fixed point" was an end-around-carry
+   artifact; "unit cells must be uniform" was just a too-small search).
+2. **Rows are not the state.** The machine state is 2 bits per cell
+   (digit, carry) on the antidiagonals t = r + c. Treating display rows as
+   integers erases the carry field and the whole off-shell state space.
+3. **Orientation and rendering.** MSB is LEFT. matplotlib defaults (MSB
+   right, stretched cells, seed transients shown) caused literal confusion
+   ("why are your graphs expanding to the right").
+4. **"Loop" is a window, not a modulus.** Looping a side means a periodic
+   simulation window into a giant CA. Translating it to mod 2^W-1 imported
+   number-theory artifacts that had nothing to do with the CA.
+5. **Persistence is not composition.** "The orbit closes eventually" was
+   repeatedly offered where "the composite keeps its parts' period and
+   sections" was asked for.
+6. **Priority inversion.** Requests of the form "try hard to build/find X"
+   were answered with impossibility proofs (in proxies) instead of serious
+   searches in the real system with pictures of best attempts. The user's
+   distrust was correct every time it was voiced.
+7. **Overcorrection at the end.** After the proxy errors were exposed, the
+   pendulum swung to "everything was an artifact, it all just descends".
+   Also mis-scoped: finite-seed stopping-time statistics do not refute
+   bulk-interior structure. In the "middle of an absurdly large number"
+   frame, x3-with-carry IS the correct local physics; the x3 results are
+   valid there and invalid as claims about global Collatz behavior. Scope
+   labels ([real-CA] / [x3-bulk] / [value] / [ring]) are now mandatory.
+
+## Program state: half machine and composable patterns
+
+**Half machine** (looping right side, free left edge). Done:
+- Definition pinned. Full cycles are excluded by the rational-slope iff cycle
+  argument and the sqrt(n) timing wall [value].
+- Half-open model [x3-bulk]: tail = repeating fraction a/d, head = integer
+  part. Head digit stream = base-3 expansion of a/d; MSB edge is exactly
+  t*log2(3) + log2(a/d) (universal slope, pattern sets only the offset); the
+  tail is untouchable (one-sided light cone).
+- Fuse law [value]: a prescribed periodic halving pattern on a d-bit tape
+  survives ~d steps (each odd step burns >= 1 LSB bit); all-ones is the
+  slowest burn (v=1); exchange rate of designed bits to carry bits is
+  log2(3) - 1 = 0.585 < 1, so no bootstrap.
+- Survival balance [real-CA]: net growth = log2(3) - vbar per odd step;
+  measured all-ones vbar ~ 1.8, random ~ 2.0; everything shrinks.
+
+Remaining -> RESOLVED by the 2026-08-21 agent sweep (details in the synthesis
+section at the end of this file):
+- Runner search: SOLVED EXACTLY (`tools/collatz_runners.py`). Every rhythm has
+  a rational runner n* = C/(2^S - 3^l); a tape performs the rhythm for a step
+  count determined exactly by its 2-adic agreement A with n* (0 exceptions in
+  640k trials + independent check). Overshoot is fair-coin geometric for every
+  rhythm; NO tape structure beats it. Fuse lifetime = digits of the runner you
+  wrote. Nothing extends it.
+- Off-shell tapes: DONE (`tools/collatz_offshell.py`). Carry is genuine but
+  one-slice-ephemeral state; the on-shell union is an immediate attractor;
+  no off-shell soliton (1048 perturbations). Void sector: digit patterns
+  beyond the MSB run PURE x3 inside the real CA until absorbed; a void
+  LeastEdge boots a parasite machine that consumes the host.
+- Still open (the wall): sustained vbar < log2(3) forever = a divergent
+  trajectory = the open Collatz problem.
+
+**Composable patterns.** Done [x3-bulk], valid there:
+- Catalogue: pattern = a/d with 3 not dividing d; spatial period ord_d(2),
+  temporal ord_d(3).
+- Superposition always composes (lcm). Concatenation obeys the charge law:
+  blocks compose iff A = B mod 3^{v3(2^{2L}-1)}; verified exhaustively
+  L <= 7, k <= 4; permanent domain walls exist at matching charge.
+- A^kB widening ladder controlled by v3(B - A); period-preserving ("true")
+  composition census: at L = 5, 7 every AB pair is true; at k = 3 only ABC;
+  A^(k-1)B never (primitive prime divisors of 2^kL - 1).
+- Traveling crystals: rigid shift iff 3 = 2^k mod d; left-movers exist
+  (d = 13, 29, 61); under the half-open boundary the tail slides left while
+  feeding the head.
+
+Remaining / resolved:
+- Atlas at the hex tile level: PARTLY RESOLVED via the void-sector discovery
+  (`tools/collatz_offshell.py`): the x3-bulk IS the physics of digit patterns
+  in the void beyond the MSB of the real CA, so the whole atlas is real-CA
+  void-sector physics, valid until the host front absorbs the pattern. The
+  charge-as-carry-content conjecture is dead at the interface: charge never
+  registers in the LeastEdge rhythm (|d| <= 0.1); it is a void/persistence
+  quantity only.
+- The bridge question - ANSWERED (2026-08-21, `tools/collatz_bridge.py`, last
+  section of this file): composition is loud in the rhythm (crystal tails give
+  an exactly periodic v-sequence = the 2-adic ideal of -A/(2^L-1); block
+  boundaries are located by the rhythm to the bit), but the x3 CHARGE never
+  registers in the rhythm (|d| <= 0.1 across three geometries); the
+  structure-destroying wedge at a domain wall is universal (archimedean,
+  ~log2(3) bits/step), not charge-gated.
+- k >= 3 weighted charge law: MAPPED (`tools/collatz_charge3.py`). Debt lives
+  only on even window widths (3 | 2^n-1 iff n even): strict triples exist iff
+  L odd with >= 3 populated charges (336 at L=3, 465948 at L=7); k=4 needs the
+  alternating sum, so order matters and palindromes (ABBA, AABB) rescue
+  forbidden pairs. Verified by simulation.
+- Off-shell compositions: subsumed by the off-shell sweep (on-shell attractor;
+  nothing persistent to compose).
+- The real-CA tile/front bridge: RESOLVED (2026-08-22,
+  `tools/collatz_compose.py`, last section of this file). Growing blocks =
+  negative 2-adic rational cycles (70 for l <= 7, all realized and locked in
+  the real system); raw cuts almost never compose (handoff = basin of the
+  wall rational, exact, 0/360 exceptions); the computed-preimage splice
+  composes ANY block over ANY block with zero transient.
+
+## The idea
+
+Plot total stopping time against input and you get a picture full of obvious
+structure — a fan, bands, dashes, lines at several angles. Every one of those is
+*explainable*, which means it is telling you about the coordinate system rather
+than about the Collatz map. So: find a pattern, work out exactly what generates
+it, change coordinates or drop data until it disappears, and look at what is
+left. Repeat.
+
+The goal is to keep going until nothing is left but noise. That would be the
+interesting object — the part of a trajectory's length that isn't a consequence
+of anything structural.
+
+It probably doesn't terminate. Reaching "no residual" would mean predicting
+stopping time in closed form, which is the whole problem. But the peeling is
+worth doing for its own sake: each layer that comes off names a specific
+mechanism, and the residual left after all of them is stationary and looks like
+a genuine law (see below). Knowing precisely *which* patterns are removable is
+progress even if the last one never is.
+
+## Running it
+
+```
+python3 tools/plot_collatz.py    [N]   # the basic log-x plot and a density version
+python3 tools/collatz_lattice.py [N]   # coordinate changes: slopes, fold, transforms, shear, wrap
+python3 tools/collatz_reduce.py  [N]   # throwing data away: residue classes, leaves, toggle, sieves
+```
+
+`N` defaults to 10^7 and everything is reproducible from scratch. Stopping times
+come from `tools/collatz_steps.c` (cached descent: walk until the trajectory
+drops below its start, then read the answer off). 10^8 takes 3.6 s, 10^9 about a
+minute and 2 GB of disk. The committed 10^9 render is `images/collatz-log-x-1e9.png`;
+longest trajectory in that range is 986 steps.
+
+10^10 would need a 20 GB cache array — over this box's 15 GB RAM. A segmented
+sieve would get there.
+
+## What came off, in order
+
+**1. The x axis.** Inputs are generated multiplicatively (n and 2n are one step
+apart, not n apart), so a linear x axis is wrong. On log x the whole picture
+becomes a linear fan, and the record holders sit on a straight upper edge.
+
+**2. The dashes are recipes.** Every trajectory is `a` halvings and `b` triplings;
+height is `a + b`, and landing on 1 needs `2^a ≈ n·3^b`, so a given `(a, b)` only
+works for n near `2^a/3^b`. One dash = one recipe. Checked: of the inputs in
+`n = 1.00–1.02×10^6` taking 90 steps, all 3027 have `b = 27`, no exceptions, and
+`2^63/3^27 = 1.21×10^6`.
+
+- a dash spans a factor of **1.25** in n — the same 1.25 at 10^6 and at 10^9
+- at a fixed step count, dashes repeat every **×6** (trade one tripling for one
+  halving: `2·3 = 6`)
+- at a fixed n, step counts are quantised by `1 + log₂3 ≈ 2.585`
+
+**3. The line families are lattice directions.** A Radon scan over the raw plot
+finds six slopes; every one is a move `(Δa, Δb)` with slope
+`(Δa+Δb)/(Δa − Δb·log₂3)`:
+
+| direction | slope | n ratio | steps |
+|---|---|---|---|
+| (1,0) | +1.00 | ×2 | +1 |
+| (1,1) | −3.42 | ×2/3 | +2 |
+| (2,1) | +7.23 | ×4/3 | +3 |
+| (3,2) | −29.42 | ×8/9 | +5 |
+| (5,3) | +32.64 | ×32/27 | +8 |
+| (4,3) | −9.27 | ×16/27 | +7 |
+
+The steep ones exist because `2^3 ≈ 3^2`: a tiny move in n, a big move in step
+count. The whole ladder of steepnesses is the continued fraction of `log₂3` —
+3/2, 8/5, 19/12 (the Pythagorean comma), 65/41, 84/53 — each a better near-miss
+giving a fainter, steeper family.
+
+**4. The y axis.** "Iterations" adds halvings and triplings as if they were the
+same unit when a tripling actually costs 2.585. Recode height as
+`b = (s − log₂n)/(1 + log₂3)`; this recovers the true tripling count exactly
+(100.00% on 4000 random n below 10^7). Row spacings that read as irregular in
+iterations — 5, 8, 13, 18, 31 — become 2, 3, 5, 7, 12 in tripling units.
+
+**5. Detrend and scale.** `b` grows at 2.4008 per doubling of n against the
+theoretical `1/log₂(4/3) = 2.4094`. Subtract the trend, divide by `√log₂n`, and
+the decades collapse onto one distribution: sd **5.19, 5.08, 4.99, 5.01, 5.04**
+from 10^2 to 10^7. Stationary — and the `√log n` scaling says the thing is a
+random walk in disguise.
+
+**6. The shear.** `x″ = 1.934·log₂n + 0.0657·s` makes the (3,2) family vertical,
+and equals the integer `2a − 3b`, so the picture becomes evenly spaced columns.
+Inside a column, step counts form a perfect ladder 5 apart (column 52: 151, 156,
+161, 166, …, every gap exactly 5). Adjacent columns are ×4/3 apart going up 3
+steps, or ×3/2 going down 2. Column spacing at fixed height is `6^(1/5) ≈ 1.431`,
+but only every fifth column is occupied at any one height (index `5a − 3s`).
+
+The grid is 5 equal divisions of the ×6 interval while the data lands on 3/2,
+4/3 and 9/8 — the just fifth, fourth and whole tone. The lattice generated by 2
+and 3 *is* Pythagorean tuning.
+
+**7. The wrap closes the loop.** Fold all columns onto one (subtract `2a − 3b`,
+and carry the shear into y as `s − 3c` so the rungs register). All lattice
+structure vanishes, and both surviving axes turn out to be things already met:
+
+- horizontal is exactly the `+1` correction: `xr = −(5/log₂6)·δ` with
+  `n·3^b/2^a = 2^(−δ)`, δ ∈ [0, 0.3256], i.e. the ratio lies in [0.798, 1] —
+  which *is* the ×1.25 dash width from step 2
+- vertical is the detrended residual from step 5: correlation **0.99997**, slope
+  0.4144 against the exact `2 − log₂3 = 0.41504`
+
+Two routes — one statistical (fit the trend, divide it out), one geometric
+(shear until the lines are vertical, then wrap) — land on the same variable.
+
+## Repetition, and why it isn't a fractal
+
+`steps(2n) = steps(n) + 1`, so each octave of n contains a perfect copy of the
+octave below (the even half) plus new material from the odd half, which runs
+about 12 steps longer on average. Verified exactly for octaves 2^20 and 2^23.
+Folding all 10^9 points at one doubling concentrates them into 47k cells;
+folding at 1.3 doublings smears the same data over 207k.
+
+So it repeats — but by *translation* along log n, not by scaling. A single dash
+spans ×1.25 in n at 10^6 and still ×1.25 at 10^9; zooming reveals no smaller
+copies. What produces the fractal feel is quasi-periodicity: the dash positions
+`a − b·log₂3` are an irrational projection of a 2D lattice, i.e. a 1D
+quasicrystal, with near-repeats at every scale in the convergent hierarchy.
+Structure at all scales, never exactly repeating, never self-similar.
+
+## Throwing data away
+
+Four different filters, and the picture survives all of them
+(`images/collatz-reductions.png`, percentages at N = 10^7):
+
+| rule | numbers kept | picture kept |
+|---|---|---|
+| odd only | 50% | 96% |
+| irreducible mod 2^20 | 11.1% | 76% |
+| leaves of the odd tree | 16.7% | 80% |
+| trajectory sieve | 43.2% | 91% |
+| strict antichain | 15.3% | **12%** |
+| toggle (XOR instead of accumulate) | — | 55% |
+
+**Exact redundancy.** For `n = 2^k·t + r`, running until k halvings are done
+always lands on `3^j·t + B` with `(j, B)` fixed by `(k, r)`; classes sharing a
+`(j, B)` have step counts differing by a constant. Enumerating them rediscovers
+the identities unprompted — survivors mod 8 are `{1, 3, 7}` — and all check out
+against the data:
+
+- `steps(2m) = steps(m) + 1`
+- `steps(8m+5) = steps(2m+1) + 2`
+- `steps(16t+3) = steps(8t+1) + 1`
+
+Density of irreducible residues falls 50% → 37.5% → 19.8% → **11.1%** at 2^20,
+with the survivor count growing ×1.895 per bit while the modulus doubles. No
+bottom: every extra bit of n buys another ~5% of excision, forever.
+
+**Leaves.** In the full graph every n has predecessor 2n, so there are none. In
+the odd tree `m → (3m+1)/2^v` a predecessor is `(2^v·m − 1)/3`, needing
+`2^v·m ≡ 1 mod 3`, which fails exactly when `3 | m`. So the leaves are the odd
+multiples of 3, 1/6 of the integers. Independent of irreducibility once you
+condition on oddness (22.2% of leaves are irreducible; 22.2% of odds are too).
+
+**The strict antichain is the one thing that does break the picture** — and only
+by emptying it. Requiring that no drawn number lie on any other's trajectory
+puts every survivor in the top decade, because if `2n ≤ N` then n sits on 2n's
+trajectory, so the top of the range consumes all of it. You only need to double
+a number to hide it. Not a statement about Collatz, a statement about the range.
+
+**Toggling is a dither.** ~52% of cells survive at every granularity tried
+(pixels, recipe cells, fold cells) because the median cell collects 122 numbers,
+so parity is a coin flip. Where copies genuinely coincide — the exact fold, where
+a whole doubling chain lands on one point — it reduces to chain-length parity,
+which deletes alternating slabs bounded at `N/2^k` and keeps 2/3 of odd numbers.
+That depends on `N`, so it isn't a property of the map at all.
+
+## The fractal, found (postscript)
+
+Zooming in *magnitude* shows no self-similarity — that was settled above. But
+the residual is driven by the trajectory's parity sequence, and the first k
+parity decisions depend only on `n mod 2^k`. So the residual is naturally a
+function on the **2-adic integers**, and the right ordering to see it is
+bit-reversed n, which puts numbers sharing low bits next to each other
+(`tools/collatz_dyadic.py`, `images/collatz-dyadic.png`).
+
+In that ordering it is genuinely self-affine, and exactly, by construction:
+`steps(2n) = steps(n)+1` leaves `b` unchanged, so `n → 2n` acts as
+`x → x/2, z → z − 2.4`. Measured: the left half of the conditional-mean curve
+equals the whole curve shifted by −2.399 (predicted −2.4008), sd ≈ 0.5 on a
+curve of range ~70, and the same holds through zooms ×4 and ×16. Each extra
+bit of n explains the same **1.0%** slice of the residual's variance, linear
+from k = 1 to 16 with no saturation — equal energy per dyadic level, the
+signature of a Takagi-style self-affine curve.
+
+So both instincts from the exploration were right, they just live in different
+completions of the integers: the **quasicrystal lives in log n** (the
+archimedean side, where 2 and 3 fight over `log₂3`), and the **fractal lives in
+2-adic n** (where halving is exact and every zoom is a translate). The two
+pictures are complementary views of the same object, one per place.
+
+## Probing the noise (second postscript)
+
+Three tests of whether the dyadic cascade is itself patterned
+(`tools/collatz_noise.py`, `images/collatz-noise.png`), plus the tree drawn as
+geometry (`tools/collatz_feather.py`, `images/collatz-feather.png` — every
+trajectory walked backwards from 1, turning left per halving and right per
+3n+1, so shared tails coincide and the tree becomes literal branches).
+
+- **The cascade has no memory.** The level-k increments of the conditional-mean
+  tree have variance 5.71, flat for fourteen straight levels, and the
+  correlation between a child's increment and its parent's is +0.000 at every
+  level. (The uptick at levels 15–16 is finite-sample: 256 numbers per cell.)
+- **Walsh spectrum: 1/f, with one real pattern inside.** Total Walsh energy per
+  dyadic level is constant — the 1%/bit law again, now as a spectrum. But
+  within a level the energy is not chi-square flat: masks touching 1–3 bits of
+  n carry ~2× their level's mean energy, masks touching 6–7 bits carry ~0.75×.
+  The residual's dependence on n's bits prefers simple few-bit interactions.
+  This is the only deviation from pure noise found so far, and it is unexplained.
+- **Total base-2/base-3 asymmetry.** Variance explained per digit of n,
+  overfit-corrected (a k-digit fit on m samples explains #classes/m spuriously —
+  uncorrected, the 3^12 fit shows a fake 11.1%): binary digits carry **1.00%**
+  each, twelve digits deep; ternary digits carry **0.00%**, twelve digits deep.
+  The trajectory reads n in base 2 and is blind to base 3 — which is the
+  heuristic *reason* the problem is hard: 3n+1 writes in a base the dynamics
+  never reads.
+
+## The left edge is an instrument (third postscript)
+
+Found by eye, in the hex CA view: a "ping-pong" walk (diagonal from the left
+edge down to the LeastEdge boundary, back along that row, repeat) seemed to
+land on rows whose left edge grew by exactly one column. The literal claim
+breaks at the third bounce — the walk and the growth pattern are two
+quasi-periodic clocks with incommensurate rates that phase-lock briefly and
+then precess (42.3% coincidence over 3,904 bounces vs a 41.5% base rate). But
+chasing it exposed something better (`tools/collatz_edge.py`,
+`images/collatz-edge.png`):
+
+The left edge grows 2 columns instead of 1 exactly when `frac(log₂n) ≥
+2 − log₂3`, each row adds `log₂3` to that fraction, and the halvings subtract
+integers — which cannot touch a fractional part. **The entire LSB side, the
+whole unpredictable hash, is invisible to the left edge.** Its silhouette is
+the orbit coding of a pure circle rotation, perturbed only by the +1's
+~`1/(3n·ln2)` per row. Consequences, both verified:
+
+- **Predict**: from the single real `frac(log₂n₀)`, no trajectory computed,
+  the rotation reproduces 125 of 77031's 129 growth steps (97%). Median across
+  random inputs: 88% of the trajectory at n ~ 10^5, 95%+ at 10^11 — the
+  horizon grows with n because the +1 drift shrinks as 1/n.
+- **Decode**: conversely ~20 rows of the observed pattern pin `frac(log₂n)` to
+  ±0.01 — reading the *magnitude* of the input off a screenshot of the edge
+  (77031 recovered as 77148, 0.15% error, from 40 rows). Only the magnitude:
+  the low bits stay hidden, as the noise probes require.
+
+**The edge is a line, and its angle is universal.** The MSB column is exactly
+`m_r = floor(log₂n₀ + r·log₂3 + drift)` — the halvings are integers, so they
+fall straight out of the floor and cancel. Every trajectory's left edge is
+therefore the *same* line of slope `log₂3 = 1.58497` columns per row,
+regardless of n, staying inside a 1-column band of it forever (measured max
+deviation 0.94–1.10 columns across n from 27 to 10^15). What n sets is only
+the sub-column phase — which rows take the wide step. It is literally
+Bresenham line rasterisation of an irrational slope, and the growth pattern is
+quasi-periodic for exactly the reason a rational slope would have been
+periodic (`images/collatz-edge-line.png`).
+
+This is the sharpest form of the session's forgetting hierarchy: the LSB
+forgets its input in one step; the MSB phase drifts by ~1/n per step. The two
+edges of the number are its fastest and slowest clocks, and the hex graph
+displays both.
+
+## Why the machine can't loop (fourth postscript)
+
+The design that started all this: encode a Turing machine in an absurdly large
+number, keep it alive at the MSB edge, build intermediate machines by looping
+the left or right edge. The loop is the part that provably fails, and the
+argument is one line in the idealised case (`tools/collatz_cycles.py`):
+
+> A loop returns the MSB phase to itself, so `a = b·log₂3` for integer `a`
+> halvings and `b` odd steps, so `log₂3` is rational. It isn't. No loops.
+
+**The `+1` is the only thing that rescues loops from that**, and it rescues
+them by exactly O(1/n). Measured: each `3n+1` overshoots `3n` in phase by
+`0.48090/n` per odd step, against the theoretical `1/(3 ln 2) = 0.48090`. So
+the real closure condition is `a − b·log₂3 = D` with `D ≈ 0.481·b/n` — nonzero,
+so no contradiction, which is why the conjecture is open rather than trivial.
+(The trivial cycle `1→4→2→1` is the extreme case: at n = 1 the slack is 100%,
+and the convergent 2/1 licenses loops up to n ≈ 1.16. It closes at exactly the
+one value where the argument has no force.)
+
+Since best approximations obey `|a/b − log₂3| ~ 1/b²`, closing a loop around a
+value n needs **b ≈ 1.44·√n** odd steps:
+
+| tape | loop period | tape rewrites during one loop |
+|---|---|---|
+| 68-bit | 2.5×10¹⁰ | 5.8×10⁸ |
+| 100-bit | 1.6×10¹⁵ | 2.6×10¹³ |
+| 1000-bit | 4.7×10¹⁵⁰ | 7.5×10¹⁴⁷ |
+
+So every gadget's period is exponential in the tape it loops — gadgets can
+never be composed — and the halvings rewrite that tape astronomically many
+times during a single period, so nothing survives to be looped anyway. Scale
+makes it worse, which inverts the design's core premise.
+
+Cross-check that this is the standard argument and not a private one: applied
+at the verification frontier 2^68 it gives a minimum cycle period of 2.5×10¹⁰,
+against Eliahou's 1993 bound of ~1.7×10¹⁰. Same order, same continued fraction.
+
+**Can the left edge be influenced at all?** Yes — and `1 → 4 → 2 → 1` is the
+proof (`tools/collatz_halfmachine.py`). A pure `×3` advances the MSB edge by
+`log₂3 = 1.58496` columns; `3·1+1 = 4` advances it by exactly 2. The `+1`
+supplied `log₂(4/3) = 0.41504`, precisely the deficit `2 − log₂3`. The phase
+landed on an integer and the loop closed.
+
+But that influence is `log₂(1 + 1/(3n))` ≈ `0.481/n` per step, fixed by the
+number's **magnitude**, not its bits — so the tape cannot modulate it. It works
+at n = 1 because there the LSB *is* the MSB: a right-edge event moves the left
+edge undiluted. At n = 2^32 it is 10^-10. The attenuation factor is exactly the
+size of the tape you wanted.
+
+**And a "half machine" — looping right side, free left edge — is fully solved,
+classically.** The parity-vector map is a homeomorphism of the 2-adic integers
+conjugating the Collatz map to the plain shift (Lagarias 1985), so *every*
+periodic parity sequence is realised by exactly one 2-adic number. Prescribe
+any right-side loop and the script hands you the carrier: it is always
+`C/(2^a − 3^b)`. The right side loops perfectly in all cases; being a positive
+integer is the separate condition, and it is the same wall. Of 340 prescribed
+loops up to 4 odd steps, exactly one positive integer appears — n = 1.
+
+**When is the edge slope rational? Exactly when it loops — and for a single
+step, only at n = 1** (`tools/collatz_rational.py`). The per-step slope with the
+`+1` included is `log₂3 + log₂(1 + 1/(3n)) = log₂((3n+1)/n)`. Demand it be
+rational: `(3n+1)^q = 2^p·n^q`. Any prime `r | n` divides the right side, hence
+`3n+1`; but `r | 3n`, so `r | 1`. Contradiction — **n = 1**, where the slope is
+`log₂4 = 2` exactly. Searched to 2×10⁵: no other solution. The drift term alone
+is starker still: `log₂((3n+1)/(3n))` rational would need `3n | 1`, so it is
+irrational for *every* n without exception.
+
+Over a window of k odd steps from odd `n₀` to odd `n_k` with A halvings, the
+advance is `log₂(2^A·n_k/n₀)`; a rational power of 2 that is itself rational
+must be an integer power, so `n_k = n₀`. Hence at every window length:
+
+> edge advance rational ⟺ advance is a whole number of columns ⟺ a cycle
+
+which makes the original intuition exact in *both* directions. "If it looped,
+the left edge would be rational" is true, and so is the converse: nothing short
+of a genuine cycle ever makes the left edge commensurable with the grid.
+Empirically, across 277,607 non-closing windows the advance never came within
+0.00085 of an integer.
+
+**Half machines exist — and they are fuses** (`tools/collatz_halfrun.py`). A
+half machine is not a cycle: it is a gadget whose *low-order* behaviour is
+periodic (a prescribed, repeating halving pattern) while the value grows
+without bound and the MSB edge marches off. One edge loops, one does not.
+
+They are easy to build. The canonical one is the all-ones tape `n = 2^d − 1`,
+which sustains one halving per odd step — the minimum, hence the fastest
+growth — because after j steps its value is `3^j·2^(d−j) − 1`, odd exactly
+while `d − j ≥ 1`. It runs **exactly d steps**, grows by `(3/2)^d`, and stops.
+
+That bound is general. Every odd step costs at least one halving, i.e. one bit
+off the right edge, and the first k parity decisions depend only on `n mod 2^k`
+— so d bits of tape buy at most d steps of prescribed behaviour, for any
+pattern. Measured across patterns, total halvings consumed always lands at the
+tape length.
+
+The machine does grow, from d bits to `d·log₂3` bits. But the bits it gains are
+carries, fixed by arithmetic, not chosen. The exchange rate is
+**log₂3 − 1 = 0.58496** undesigned bits gained per designed bit spent, and a
+bootstrap needs that ratio above 1. It isn't, and it can't be tuned.
+
+So "not self-sustaining" has a precise form: a half machine isn't impossible,
+it's a fuse. It burns at one bit per step, and the fuse is the tape.
+
+**The CA frame, which is the right one** (`tools/collatz_glider.py`). Every
+argument above treats the whole row — the number n — as the machine state. That
+turns the question into number theory and misses what a cellular automaton is:
+a row is the *universe*, and a machine is a **localized pattern**, like a glider
+in Rule 110 (also in this repo, universal precisely because its gliders collide
+in controlled ways). So: does this CA have gliders?
+
+No, and the proof is short. The all-ones 2-adic background is stable
+(`3·(−1)+1 = −2`, halve once, back to −1). Inject a localized defect. Two states
+differing only in high bits agree on their low bits, hence on their halving
+count v, so the difference obeys **exactly**
+
+> `d → 3d / 2^v`
+
+The perturbation dynamics is *linear*, and it is multiplication by 3. Since `3d`
+always needs `log₂3` more bits than `d`, the only bounded orbit is `d = 0`.
+Verified: the linear law held in every trial, **no** bounded support among all
+4095 defect patterns up to 12 bits wide, and a measured spread rate of 1.583
+cells/step against `log₂3 = 1.58496`.
+
+So this CA has a speed of light equal to `log₂3`, and every disturbance travels
+at exactly it — nothing propagates while keeping its shape. That is a far
+simpler and stronger obstruction than any of the Diophantine arguments: gliders
+don't exist, so there is nothing to collide, so there is no computation to
+build, whatever the numbers do. Rule 110's ether by contrast supports defects
+that translate *without* spreading, and that difference — dispersion-free
+propagation — is exactly what separates a universal CA from this one.
+
+**Looping universes** (`tools/collatz_loopworlds.py`,
+`images/collatz-loopworlds.png`). On a line the machine dies of fuel. Close the
+universe into a ring and the MSB edge wraps instead of escaping — which also
+dissolves the half/full machine distinction, since a left edge that cannot
+march off is a left edge that loops. Three rings, by how a carry leaves the top
+and returns: **plain** (mod 2^W), **cyclic** (end-around carry, mod 2^W − 1),
+**negacyclic** (end-around borrow, mod 2^W + 1).
+
+All three work and all three are degenerate. Non-trivial cycles appear
+sporadically — a 90-cycle at W=13 cyclic, 63 at W=11 — but grow *rarer* with W,
+and by W=17–20 every ring in every topology has collapsed to the trivial
+3-cycle. The cause is exact: only **2/3** of states have a preimage (0.6667 at
+W = 10, 12, 14, 16), so a third of the information is destroyed per step.
+
+The standard fix is Fredkin's second-order construction, remembering the
+previous row: `x[t+1] = f(x[t]) XOR x[t−1]`, invertible since
+`x[t−1] = f(x[t]) XOR x[t+1]`. That universe stays alive — at W=10, 1114
+distinct cycles with the longest 7656 steps, and live-cell density holds (145 →
+137) where the irreversible ring decays (145 → 79).
+
+But it still has no gliders: a single-bit defect opens a light cone — visibly a
+Sierpinski gasket while the dynamics is still in its linear XOR regime — and
+then fills the ring. So each universe fails its own way: **the line runs out of
+fuel, the plain ring loses information, and the reversible ring keeps
+everything but mixes it globally**, leaving no independent parts to compute
+with. Stability was the easy half; locality is the one that never arrives.
+
+**Ring size decides everything — until the parity branch throws it away**
+(`tools/collatz_ringsize.py`, `images/collatz-ringsize.png`). On the cyclic ring
+the modulus is `2^W − 1`, so W controls the arithmetic the universe is built
+from, and the two extremes are dramatic — *for the branchless affine map*
+`x → 3x+1`:
+
+| W | 2^W − 1 | divisors | orbits | longest orbit |
+|---|---|---|---|---|
+| 17 (prime) | 131071 (Mersenne prime) | 2 | **2** | **131070 = the whole space** |
+| 19 (prime) | 524287 (Mersenne prime) | 2 | **2** | **524286 = the whole space** |
+| 20 | 3·5²·11·31·41 | 48 | 3205 | 120 |
+| 24 | 3²·5·7·13·17·241 | 96 | **8394** | 240 |
+
+Mersenne-prime rings give a single maximal orbit covering the entire universe —
+a perfect clock. Heavily factorable rings shatter into thousands of orbits,
+which is the CRT decomposition made visible: the state splits into independent
+components, one per prime power, each cycling on its own period. **Independent
+components are exactly what a machine needs for registers.** Ring size is a
+real knob, running from one giant clock at the prime end to thousands of
+registers at the composite end.
+
+Turn the Collatz parity branch back on and **both ends collapse to 3–5 orbits,
+for every W**, prime or composite, across the whole scan. The reason is one
+line: `2^W − 1` is odd, so a residue mod any factor carries no information
+about the parity of the representative. The branch reads a bit that is
+invisible to every CRT component and couples all of them through it — a global
+broadcast no part of the decomposition can see coming, re-randomising the whole
+state.
+
+That is the sharpest form of the obstruction in this whole investigation: the
+algebra of the ring hands you exactly the independent parts a machine needs,
+and the parity branch — the thing that makes this Collatz rather than plain
+multiplication — is precisely what destroys them.
+
+**Where do you read the parity on a ring?** (`tools/collatz_branchplace.py`)
+Parity needs a distinguished cell and a ring has none — every cell is
+equivalent under rotation. The ring universes above quietly kept bit 0 as "the
+LSB", so they were never translation-invariant CAs; they were rings with a
+hidden head bolted on.
+
+Worse: **on a ring with end-around carry, halving *is* rotation.** Multiplying
+by 2 is a symmetry (`2^W ≡ 1`, and `inv2` is the back-rotation), so W halvings
+return exactly where they started. The halvings are not dynamics at all, they
+are a period-W clock. All the dynamics lives in the branch.
+
+Trying every placement on the same ring (W = 15 and 21, where `gcd(3, M) = 1`):
+
+| branch read from | orbits | longest |
+|---|---|---|
+| nothing (pure `x→3x+1`) | 4266 | 504 |
+| bit-0 parity (hidden head) | **3** | **3** |
+| popcount parity (rotation-invariant but global) | 49940 | 21 |
+| one CRT component (`x mod 7`) | 44600 | 672 |
+
+The CRT placement is the best of them — the control component runs
+autonomously and drives the rest, a genuine control/registers skew product —
+but the control is only p states wide, so periods stay tiny.
+
+None of it helps, and the reason is structural rather than a bad choice.
+**`3n+1` on a ring is `n + rotate(n)` with carries — a global operation on the
+whole state — so whatever selects it is necessarily global too.** One bit of
+control, for the entire universe, once per step. You cannot have part of the
+ring tripling while another part halves, because tripling is not something a
+part can do. A machine needs many independent control decisions per step; this
+universe offers exactly one.
+
+**The bulk: order without signals** (`tools/collatz_bulk.py`,
+`images/collatz-bulk.png`). The ring is a simulation *window*, not the
+universe — periodic boundaries for studying the bulk of a much larger
+automaton. The halving happens at the LSB, far outside the window; from inside
+you only see `×3` with carries plus a uniform drift. So the branchless ring
+isn't a degenerate case, it is the correct bulk model — and it is the one with
+the rich structure.
+
+**Crystal phases exist.** In a ring of size W, states of spatial period `p | W`
+are *exactly* invariant under `×3`: such a state is `X·(2^W−1)/(2^p−1)`, and
+tripling gives `3X mod (2^p − 1)` in the same form. Verified for p = 3, 5, 6, 8
+over 300 steps each. These are the CRT components seen as spatial order rather
+than algebra — one ordered phase per divisor of W, each an invariant subring,
+each persisting forever. That is real, indefinite memory, and the first
+positive structural result in the whole machine thread.
+
+**But there are no quasiparticles.** Put two phases side by side and the domain
+wall between them does not hold together:
+
+| step | domain wall | 1-bit defect |
+|---|---|---|
+| 4 | 2 | 4 |
+| 16 | 19 | 13 |
+| 64 | 101 | 54 |
+| 199 | ~113 | ~125 |
+
+Both disperse at the same rate and saturate near W/2. The wedges in the figure
+are light cones, not trajectories.
+
+So the medium supports **order but not signals**. You can build a region that
+remembers a state indefinitely, but nothing can be sent from one region to
+another, because every disturbance spreads at `log₂3` rather than travelling.
+Storage without communication — the one combination that cannot be assembled
+into a machine.
+
+**Building structures to order** (`tools/collatz_build.py`,
+`images/collatz-structures.png`). In the bulk, a spatial-period-p state is
+exactly invariant and evolves as `x → 3x mod (2^p − 1)`, so its temporal period
+is fully determined by which CRT components are switched on:
+
+> `period(x) = lcm{ ord_d(3) : d a prime power dividing 2^p − 1, x ≢ 0 mod d }`
+
+Which turns structure-building into shopping from a parts catalogue. A W = 60
+ring stocks components 5, 7, 11, 13, 25, 31, 41, 61 with orders 4, 6, 5, 3, 20,
+30, 8, 10 — so short periods are picked off the shelf. Each of these was
+constructed and then **verified by running the automaton**:
+
+| period | spatial p | component |
+|---|---|---|
+| 3 | 12 | 13 |
+| 4 | 4 | 5 |
+| 5 | 10 | 11 |
+| 6 | 3 | 7 |
+| 8 | 20 | 41 |
+| 10 | 60 | 61 |
+| 20 | 20 | 25 |
+| 30 | 5 | 31 |
+
+Switch every component of a phase on at once and periods compound by lcm:
+spatial 20 → 120, spatial 60 → **6600**.
+
+The long end needs no construction at all. If `2^p − 1` is a Mersenne prime
+there is only one component, so *every* nonzero state of that phase is maximal:
+
+| p | period |
+|---|---|
+| 31 | 715,827,882 |
+| 61 | 2.56 × 10¹⁷ |
+| **89** | **6.19 × 10²⁶** — 3 is a primitive root, the entire group |
+| 107 | 1.62 × 10³² — primitive root |
+| 127 | 5.67 × 10³⁷ |
+
+An 89-cell-wide patch of this automaton cycles with period 6.19 × 10²⁶, and all
+6.19 × 10²⁶ of its nonzero states lie on that single orbit.
+
+A long variant rendered next to a short one in the *same* ring
+(`images/collatz-longvariant.png`, W = 635 = 5 × 127): the period-30 phase is a
+clean woven diagonal that visibly repeats inside the window, while the
+period-5.67 × 10³⁷ phase looks like pure noise and repeats no row at all across
+380 steps. Both are exactly periodic and exactly invariant; the difference is
+only which component is live. Superposed, the two phases coexist without
+interacting and the period is `lcm(30, P) = 2.84 × 10³⁸`. The long period was
+verified rather than assumed: `3^P ≡ 1 mod 2^127−1`, and `3^(P/q) ≢ 1` for
+every prime `q | P`, so P is minimal. So the medium is
+not poor in structure — it is extraordinarily rich in it. What it lacks,
+still, is any way for two structures to interact.
+
+**Yes — the short-period structures share a window freely, and combine into new
+ones** (`images/collatz-gallery.png`). Superposition between components is just
+addition, so any set of them can occupy the same cells at once, and the joint
+period is the lcm: `5 + 7` → 12, `11 + 13` → 15, `5 + 11` → 20, `7 + 11` → 30,
+`5 + 11 + 13` → 60. Because the sum carries, the result is not an overlay of the
+two patterns but a genuinely new texture — the singles are clean diagonals and
+stripes, and the pairs come out as houndstooth and herringbone weaves. Every one
+is exactly periodic and persists forever.
+
+**Two crystals side by side, with a wall — they coexist, with a lifetime**
+(`images/collatz-domains.png`). Put a period-3 crystal in cells 0–149 and a
+period-5 crystal in 150–299. Both survive as recognisable crystals, and each
+region erodes from its walls at a measured **1.58 cells per step** — which is
+`log₂3 = 1.585`, the same light-cone speed as every other disturbance here. A
+crystal region is a region where `x_i = x_{i+p}`, that condition is just another
+perturbation, and perturbations travel at exactly one speed in this medium.
+
+So adjacency is not forbidden, it is *timed*: two crystals of width w coexist
+cleanly for about `w/1.58` steps. 150 cells each buys ~95 steps of clean
+two-domain structure, and the right panel of the figure shows it directly —
+two solid coloured wedges shrinking under an advancing front of disorder. Wider
+domains last proportionally longer, and nothing lasts forever.
+
+**Permanently, with a vacuum gap — exhaustively impossible**
+(`tools/collatz_domains.py`). The persistent states can be *enumerated exactly*
+rather than sampled: a state has period dividing T precisely when
+`(3^T − 1)x ≡ 0 mod M`, i.e. when it is a multiple of `M/gcd(M, 3^T − 1)`. Take
+T to be the lcm of every achievable period and that lists every state on a cycle
+— the complete population of things that persist at all.
+
+For each one, take the union of its support over its whole orbit; cells outside
+that union are permanently empty, and are the only places a wall could live:
+
+| ring | cycle states (all of them) | longest permanent vacuum |
+|---|---|---|
+| W = 20 | 349,525 | **1 cell** |
+| W = 24 | 1,864,135 | **1 cell** |
+
+One cell, across every persistent structure that exists in these rings. Some
+*are* genuinely inhomogeneous — local periodicity varies around the ring, and
+some look like a compact blob in a sea of zeros that grows and snaps back — but
+the empty cells always arrive as isolated holes inside a pattern
+(`##.###.###.###`), never as a region. Juxtapose two crystals by hand and the
+wall radiates on the very first step, with no nearby persistent state to relax
+into, because every persistent state is spread across the entire ring by
+construction.
+
+**But that is superposition, not adjacency.** Two different questions, opposite
+answers (`images/collatz-twostructures.png`).
+
+**Superposed — yes, perfectly.** Two phases occupying the *same cells* but
+different CRT components coexist with exactly zero cross-talk, verified over 200
+steps. It is trivially exact: each is `≡ 0` mod every component of the other, so
+neither is visible to the other at all. That is why their periods simply lcm
+together. You can stack as many as W has divisors, all persisting forever.
+
+**Side by side — no.** Two crystal chunks placed in *separate cells* (a
+period-5 block in cells 0–120, a period-7 block in 320–440) both radiate from
+their edges immediately and stop being separable by **step 118**, after which
+there is one merged mess. The bottom panel is two light cones opening until they
+collide.
+
+So the medium separates **spectrally but not spatially**, and each half of that
+kills computation in its own way:
+
+- the spectral channels are *too* independent — components never mix under a
+  multiplicative map, so there are no gates, only parallel non-interacting clocks
+- the spatial dimension is *too* coupled — everything mixes at `log₂3`, so there
+  are no wires
+
+A machine needs parts that are separate *and* can be made to interact. Here
+separateness and interaction are mutually exclusive: anything that can touch
+dissolves, and anything that persists can never touch.
+
+**The symmetry worth keeping:** the left edge can't loop because 2 and 3 never
+mesh and the slack that might excuse it vanishes as 1/n; the right edge can't
+loop because it forgets its input in a single step (the memoryless hash of
+postscript 2). The slowest clock in the system and the fastest, refusing for
+completely independent reasons.
+
+## Why one bit per cell is the whole state
+
+The CA displays **six** states per cell: `(digit, carry)` in four combinations,
+plus `LeastEdge`, plus blank. Only one of those is dynamical state.
+
+Reading `computeCell`: the next row is built from `shifted?.digit` and
+`same?.digit` — **digits only** from the row above — while `carryIn` comes from
+`get(r, c-1)`, the left neighbour in the *same* row. So the carry is an
+intra-row sweep, recomputed from the digits every time, never fed forward.
+
+Verified by porting the rule faithfully and keeping both bits: 300 random pairs
+of rows with **identical digits but different carries** produce identical next
+rows, zero mismatches. And the resulting digit dynamics equals `3x` exactly on
+every trial.
+
+So `carry` is a derived quantity — visible in the render, not part of the
+state — and `LeastEdge`/blank are the two edge markers the bulk drops. One bit
+per cell is complete.
+
+## A single structure with several different sections
+
+The stronger request: not two patterns spliced, but **one** repeating pattern
+whose unit cell contains large distinct sections, each internally periodic, and
+which keeps that sectioning for its whole orbit. Searched exhaustively over
+every orbit of the block dynamics `X → 3X mod (2^P − 1)`:
+
+| P | orbits where *every* state has ≥2 different repeating sections |
+|---|---|
+| 12 | 0 |
+| 16 | 0 |
+| 18 | 0 |
+| 20 | 0 |
+
+None. A P-periodic state has an arbitrary P-bit unit cell, so you can *build*
+any sectioning you like — but the cell evolves as `X → 3X mod (2^P − 1)`, and
+the only blocks fixed by that are trivial (`3X ≡ X` forces `2X ≡ 0`, and the
+modulus is odd). The unit cell must churn, so its internal sectioning cannot be
+held.
+
+`images/collatz-threeloops.png` shows what *can* be held: twelve structures,
+each rendered for exactly three complete periods with the loop boundaries
+marked, no seed transient — one uniform texture per structure, which is exactly
+the constraint.
+
+**That last claim is wrong, and the next section is the retraction.**
+
+## AAB, ABBA, AABB — the sectioning does exist (correction)
+
+(`tools/collatz_subpatterns.py`, `images/collatz-subpatterns.png`.)
+
+The search above asked whether *every* state of an orbit splits into ≥2
+different **internally periodic** sections. Answering "no" to that, I then
+asserted the much stronger thing — that a unit cell can never hold internal
+sectioning at all, because the only blocks fixed by `X → 3X mod (2^P − 1)` are
+trivial. The gap in the argument: a block does not have to be *fixed* for a
+sectioning to persist. `A` and `B` can both churn while remaining equal to each
+other, and that is what actually happens.
+
+The pipeline that found it: take the 100 most heavily factorable windows
+`W ∈ 8..144`; enumerate every loop of period ≤ 64 (a state has period dividing
+`T` iff it is a multiple of `M/gcd(M, 3^T − 1)` — exact enumeration, not
+sampling, which never lands on a short cycle); crop each loop to its minimal
+unit in time *and* space; rotate so the numerically lowest row comes first;
+collapse duplicates; then read the first row as `k` equal blocks and see what
+word they spell.
+
+```
+scanned 53,609 loops -> 25,552 distinct after cropping/canonicalising
+1,939 of them (about 1 in 13) have a first row of the AAB / ABBA kind
+157 distinct block words, 79 with no empty block
+```
+
+Literal examples, all with every block non-empty:
+
+| window | cell | period | word | first row |
+|---|---|---|---|---|
+| 126 | 18 | 36 | `AAB` | `#.#.## #.#.## .#....` |
+| 140 | 20 | 8 | `AABB` | `..### ..### ##... ##...` |
+| 144 | 12 | 12 | `ABBA` | `#.. .#. .#. #..` |
+| 90 | 30 | 30 | `ABBCC` | `.######.##..#.##..#.....#.....` |
+| 120 | 60 | 24 | `AABCCD` | six blocks of ten, four distinct |
+
+The whole `AABB` loop, two spatial copies, all eight rows — `AABB` marks a row
+carrying the same word, `~` a row carrying a different one:
+
+```
+      AAAAA|AAAAA|BBBBB|BBBBB   AAAAA|AAAAA|BBBBB|BBBBB
+AABB  ..###|..###|##...|##...   ..###|..###|##...|##...
+~     ..#.#|.##.#|##.#.|#..#.   ..#.#|.##.#|##.#.|#..#.
+~     ..###|##...|##...|..###   ..###|##...|##...|..###
+      .##.#|##.#.|#..#.|..#.#   .##.#|##.#.|#..#.|..#.#
+AABB  ##...|##...|..###|..###   ##...|##...|..###|..###
+~     ##.#.|#..#.|..#.#|.##.#   ##.#.|#..#.|..#.#|.##.#
+~     ##...|..###|..###|##...   ##...|..###|..###|##...
+      #..#.|..#.#|.##.#|##.#.   #..#.|..#.#|.##.#|##.#.
+```
+
+Row 2 is `ABBA` on the same two blocks; row 4 is `AABB` with the roles swapped.
+The two blocks `..###` and `##...` keep being *re*arranged rather than destroyed.
+
+How durable is it? Two different questions, two very different answers:
+
+| word | shape | rows with *some* word | rows with *this* word |
+|---|---|---|---|
+| `AAB` | W=126, cell 18, T=36 | 31/36 | 2/36 |
+| `AABB` | W=140, cell 20, T=8 | 6/8 | 2/8 |
+| `ABBA` | W=144, cell 12, T=12 | 12/12 | 3/12 |
+| `ABBCC` | W=90, cell 30, T=30 | 10/30 | 1/30 |
+
+Block structure of *some* kind recurs in most rows of a loop. The *specific*
+word holds for two or three rows and then the blocks drift apart. So the
+sectioning is common and recurrent, but not persistent — my "cannot be held"
+was wrong about how often sectioning appears, and right that a given sectioning
+doesn't survive. The only thing the fixed-block argument ever established was
+that no block can be individually *fixed* by `X → 3X`.
+
+A second thing falls out. The most redundant words have an *empty* repeated
+block: `AABBBB` at `W=126` is `##.##.............` — a six-cell blob with twelve
+cells of vacuum inside its own unit cell, persisting forever. That does not
+contradict `collatz_domains.py` (which measured cells empty across a *whole
+orbit*, and found runs of one) but it does mean the per-row picture is far less
+uniform than "no vacuum anywhere" suggested.
+
+## Patching crystals together: you always can, and it never holds
+
+The obvious objection is combinatorial: there are infinitely many looping
+patterns, so surely two of them agree somewhere and can be spliced. That is
+right, and the splice is easy to find — searching all 1,864,135 cycle states of
+a W=24 ring turns up **5,424** whose configuration genuinely shows two
+different non-constant crystals side by side, for example
+
+```
+##.##.##.#.#.#..........      period-3 block | period-2 block | empty
+```
+
+which is a real cycle state with period 240. So patching is not the obstacle,
+and "do two patterns share a column" was never the right question: *every* bit
+string is a valid state, and in a finite invertible system every state is on a
+cycle. Two-crystal configurations exist in abundance.
+
+What fails is that the splice is not **preserved**. Watch that state's orbit
+(`images/collatz-patchwork.png`) and the two domains survive exactly one step,
+the next 238 are structureless, and the clean two-crystal picture reassembles
+only when the orbit closes at t=240. The configuration recurs; the structure
+does not persist.
+
+The reason is the one constant behind everything here. The invariant subspaces
+of this dynamics are the **CRT components** — global, spectral, one per divisor
+— and never spatial regions. A spatial decomposition is not something the map
+respects, so "crystal here, crystal there" is a description that erodes at
+`log₂3` from each wall, whatever pieces you build it from. Domains have a
+lifetime of about `width / 1.58` steps, and then the orbit carries on for its
+full period, which may be astronomically longer, before the picture happens to
+reassemble.
+
+## An atlas of patterns, and the law that says which ones compose
+
+(`tools/collatz_atlas.py`, `images/collatz-atlas.png`.) The right coordinate
+makes all of the above bookkeeping. A spatially periodic state of period `p`
+with cell value `X` is the repeating binary expansion of
+
+```
+r = X / (2^p − 1)   in Q/Z,
+```
+
+and `X → 3X` is just `r → 3r`. So **a pattern is a rational number with odd
+denominator**, and writing `r = a/d` in lowest terms gives all three of its
+numbers at once:
+
+| | |
+|---|---|
+| persistent | ⟺ `3 ∤ d` |
+| spatial period | `ord_d(2)` |
+| temporal period | `ord_d(3)` |
+
+"Which structures exist" becomes "which odd denominators are there" — a
+catalogue, not a search. `d = 7` is the period-3 crystal with temporal period 6;
+`d = 73` is period 9 / temporal 12; `d = 127` is period 7 / temporal 126.
+
+**Superposition** (two patterns in the same cells) always composes: `d = lcm`,
+periods `lcm`. No compatibility question at all.
+
+**Concatenation** (blocks side by side — `AB`, `AAB`, `ABBA`) does have one, and
+it is a congruence. Write the *3-adic quota* of a width-`n` cell as
+
+```
+q_n = v₃(2ⁿ − 1) = 0 if n odd, else 1 + v₃(n/2),
+```
+
+so a cell of width `n` is persistent exactly when `v₃(X) ≥ q_n`. Then for `k`
+blocks of width `L`, with `B₀` a persistent pattern in its own right:
+
+```
+B₀B₁…B_{k−1} persistent  ⟺  Σⱼ (Bⱼ − B₀)·2^{jL} ≡ 0  (mod 3^{q_kL})
+```
+
+The background contributes nothing — the entire condition falls on the
+*differences between blocks*. Verified exhaustively for `L ≤ 7`, `k ≤ 4`.
+
+For `k = 2` this collapses to something readable by eye:
+
+```
+A and B can sit side by side  ⟺  A ≡ B  (mod 3^{q_2L})
+```
+
+Compatibility is therefore an **equivalence relation**. Every persistent block
+carries a **charge**
+
+```
+c = (A / 3^{q_L})  mod  3^{q_2L − q_L}
+```
+
+and two blocks compose iff their charges match. The figure's four matrices,
+sorted by charge, are literally that relation — solid block-diagonal:
+
+| L | blocks | charges | pairs that compose |
+|---|---|---|---|
+| 5 | 32 | 3 | 33.4% |
+| 6 | 8 | 1 | **100%** |
+| 7 | 128 | 3 | 33.3% |
+| 9 | 512 | 27 | 3.7% |
+| 12 | 456 | 1 | **100%** |
+
+When the two quotas agree (`L` even, and `v₃(L) = v₃(L/2)`) there is one charge
+class and **everything composes with everything**. Odd `L` splits into
+`3^{1+v₃(L)}` classes and most pairs are forbidden.
+
+This is the clean answer to the patching question above. A wall *can* be made
+permanent — the bottom-middle panel is `A = #.##.##.#`, `B = .###.....` repeating
+every 9 cells with period 36, a genuine standing domain wall that never erodes.
+What the earlier section got right is that an *arbitrary* juxtaposition fails;
+what it missed is that the failures are exactly the charge mismatches, and they
+are a measure-`(1 − 1/3^m)` subset, not everything. A mismatched pair burns off
+its 3-part in `q_W` steps (three, in the bottom-right panel) and lands on a
+different orbit.
+
+### The `AᵏB` family
+
+(`tools/collatz_akb.py`, `images/collatz-akb.png`.) For the word `A…AB` there is
+only one nonzero difference term, at position `k−1`, so the law collapses to
+
+```
+A^(k−1)B persistent  ⟺  B ≡ A  (mod 3^{q_kL})
+```
+
+and the quota depends on `k` only through `v₃`. At `L = 5` the quotas run
+`3¹, 0, 3¹, 0, 3², 0, 3¹, 0, 3¹, 0, 3²` for `k = 2…12`, so a single pair with
+`v₃(B−A) ≥ 2` clears all of them at once. `A = #.#..`, `B = .###.` (difference 9)
+tiles as every word from `AB` to `AᵏB`:
+
+| word | width | period |
+|---|---|---|
+| `AB` | 10 | 30 |
+| `AAB` | 15 | 150 |
+| `AAAB` | 20 | 120 |
+| `AAAAB` | 25 | 450 |
+| `AAAAAB` | 30 | 1 650 |
+| `AAAAAAB` | 35 | 1 106 280 |
+| `AAAAAAAB` | 40 | 61 680 |
+| `AAAAAAAAB` | 45 | 233 100 |
+
+The period is not monotone in `k` — it is `ord_d(3)` for whatever `d` the cell
+lands on, so `AAAAAAB` at width 35 runs for a million steps while `AAAAAAAB` at
+width 40 takes 61 680. Which `k` a pair supports is read straight off `v₃(B−A)`:
+`v₃ = 0` keeps only odd `k` (free, since `kL` is then odd and the quota is zero),
+`v₃ = 1` loses `k = 6, 12`, `v₃ ≥ 2` keeps everything up to 12.
+
+### Persistence is not composition (correction)
+
+(`tools/collatz_truecomp.py`, `images/collatz-truecomp.png`.) The `AᵏB` table
+above shows words that *persist*, not words that *compose*. The period explodes
+as blocks are added — 30, 150, 120, 450, 1650, 1 106 280 — while the block `A`
+on its own cycles in 30. Nothing of `A` survives into the composite; the orbit
+merely closes eventually.
+
+There is an exact law for where the blow-up comes from. `x → 3x` is linear, so
+split a word into background plus difference field:
+
+```
+X  =  B₀·(2^{kL}−1)/(2^L−1)  +  Σⱼ (Bⱼ − B₀)·2^{jL}
+      └──── background ────┘     └───── defect D ─────┘
+
+period(X)  |  lcm( period(background), period(D) )
+```
+
+The background is just `B₀` as a crystal, contributing exactly the part's own
+period. **Every bit of the blow-up is the defect field.** So call a word a *true
+composition* when `period(word)` divides the lcm of its distinct blocks' own
+periods — no new frequencies.
+
+Exhaustive over words whose minimal spatial period is genuinely `kL` (a period-3
+crystal chopped into 5-wide pieces is not a composition, and excluding those
+drops the counts by an order of magnitude):
+
+| L | k | genuine words | true compositions | shapes |
+|---|---|---|---|---|
+| 4 | 2, 3 | 30, 66 | 0 | — |
+| 5 | 2 | 310 | **310** | `AB` |
+| 5 | 3 | 32 730 | 180 | `ABC` only |
+| 6 | 2 | 56 | 6 | `AB` |
+| 6 | 3 | 162 | 0 | — |
+| 7 | 2 | 5 334 | **5 334** | `AB` |
+| 7 | 3 | 2 097 018 | 6 090 | `ABC` only |
+
+Two things fall out.
+
+**`AᵏB` never composes truly for `k ≥ 3`** — not at any `L ≤ 16`. The defect is a
+single number `(B−A)·2^{(k−1)L}` with `|B−A| < 2^L`, so `gcd(2^{kL}−1, D) < 2^L`
+and the primitive prime divisors of `2^{kL}−1` — larger than `2^L` at these
+widths — are left live, forcing a period no width-`L` block can match. The shape
+census confirms it: at `k = 3`, `AAB`, `ABA` and `ABB` score zero, every time.
+
+**But true compositions exist, and at `k = 2` can be the entire population.** At
+`L = 5` and `L = 7`, *every* genuine two-block word composes truly; `#.#..|.#.##`
+runs at period 5 while its parts cycle in 30, and `.#.....|#.#####` at 42 against
+parts of 126. At `k = 3` only `ABC` survives — three distinct blocks, no repeat.
+Which is the opposite of the intuition that a repeated block should be the easy
+case: repetition is exactly what stops the defect reaching the new primes.
+
+## Looping right edge, free MSB edge on the left
+
+(`tools/collatz_halfopen.py`, `images/collatz-halfopen.png`.) Give the crystal
+back its MSB edge but keep the right side looping. That configuration — repeats
+forever to the right, terminates on the left — is a **real number**: an integer
+head `H` (bits at positions ≥ 0) plus a repeating binary *fraction*
+`f = X/(2^p−1)`. One step:
+
+```
+3f = q + X'/(2^p−1),   q ∈ {0,1,2}
+tail   X → 3X mod (2^p−1)      (exactly the ring dynamics)
+head   H → 3H + q              (the tail's carry spilling upward)
+```
+
+so the whole configuration at time `t` is just the real number `3ᵗ·f₀` written in
+binary. Everything follows.
+
+**The left edge never touches the right.** In `x → 3x` carries propagate only
+from LSB toward MSB, so the light cone is *one-sided* and the MSB edge is
+downstream of everything. No pattern is ever damaged — not "some survive", all
+of them, forever. The lethal edge is the other one: cut the tail off at depth `D`
+instead of looping it and the truncation eats upward at `log₂3` — measured
+1.5854, 1.5870, 1.5832 cells/step for three crystals. Looping the *right* edge
+was exactly the necessary move; looping the left would have bought nothing.
+
+**The angle is the same for every pattern.** The MSB sits at
+`log₂(3ᵗ f₀) = t·log₂3 + log₂f₀`, so the slope is `log₂3 = 1.5849625` for every
+crystal — ten of them measured, all 1.5848–1.5852. What the pattern sets is the
+*offset*, and it sets it exactly: the intercept is `log₂(a/d)`, the tail's own
+value as a fraction. Verified to twelve digits, `H/3ᵗ → a/d`:
+
+| p | d | a | H/3ᵗ | a/d |
+|---|---|---|---|---|
+| 6 | 7 | 1 | 0.142857142857 | 0.142857142857 |
+| 5 | 31 | 1 | 0.032258064516 | 0.032258064516 |
+| 15 | 151 | 1 | 0.006622516556 | 0.006622516556 |
+| 6 | 7 | 2 | 0.285714285714 | 0.285714285714 |
+
+Different patterns give **parallel** lines — never converging, never crossing.
+
+**And what grows on the left is not chaos.** The carry stream `q₀q₁q₂…` *is* the
+base-3 expansion of `a/d`, digit for digit:
+
+```
+p=6  d=7    carries    010212010212010212010212010212
+            base3(1/7) 010212010212010212010212010212
+p=5  d=31   carries    000212111221020222010111001202
+            base3(1/31)000212111221020222010111001202
+```
+
+So the head is that expansion read as a base-3 numeral — periodic, because the
+tail is rational. The left region only looks like noise because it is being
+rendered in base 2. Draw it in base 3 and it is as ordered as the crystal on the
+right: two crystals, one in each base, with the binary point as the only
+boundary between them.
+
+That also re-derives the machine obstruction in one line. The edge is at
+`t·log₂3 + log₂f₀` for *every* configuration of this kind, so its slope is
+irrational no matter what you put in the tail — no choice of pattern tilts it to
+a rational angle, and without a rational angle the edge cannot close a loop.
+
+## Is it Rule 90? No — it is Rule 60 with carries
+
+(`images/collatz-rule60.png`.) Multiplication by 3 is multiplication by the
+polynomial `(1 + x)` evaluated at `x = 2`. **Rule 60 is multiplication by that
+same polynomial over GF(2)** — `x'_i = x_i XOR x_{i-1}`. Identical algebra; the
+only difference is whether `1 + 1` carries or wraps to zero.
+
+From a one-cell seed the two agree for exactly one step and then part company:
+
+| step | ×3 with carries | rule 60 |
+|---|---|---|
+| 1 | `11` | `11` |
+| 2 | `1001` | `101` |
+| 3 | `11011` | `1111` |
+
+Rule 60 gives Pascal's triangle mod 2 — a clean Sierpinski gasket. `×3` gives
+Pascal's triangle *with carries*, which is a melted Sierpinski: the same
+triangular envelope and the same ghostly nested voids, but the fine structure
+churned into pseudorandomness.
+
+And the light-cone speeds place it exactly:
+
+| rule | polynomial | speed |
+|---|---|---|
+| rule 60 | `1 + x` over GF(2) | **1.000** |
+| **×3 with carries** | `1 + x` over **Z** | **1.586** = log₂3 |
+| rule 90 | `x + 1/x` over GF(2) | **2.000** |
+
+So the medium sits strictly between the two classic linear rules, and `log₂3`
+— the constant behind the quasicrystal, the Pythagorean comma, the machine's
+failure to loop, and the erosion rate of every crystal domain — is simply what
+the carry does to Rule 60's speed of light.
+
+## Where this leaves it
+
+Every arithmetic filter on n leaves the picture standing. That's the main
+result: the lattice is generated by the `(a, b)` recipe structure, not by the
+redundancy between inputs. Points on one visible line are typically unrelated —
+1,000,003 (recipe 77, 36) and 885,956 (recipe 80, 38) sit on the same steep line,
+and neither is on the other's trajectory; their orbits share 9 values, all in the
+common tail near 1.
+
+After peeling: a right-skewed distribution with sd ≈ 5 that is the same at every
+scale. That's the current floor.
+
+## Patterns that spread left: rigid traveling crystals
+
+(`tools/collatz_traveling.py`, `images/collatz-traveling.png`.) Several sections
+above claim every disturbance moves at `log₂3` and nothing keeps its shape. That
+is true of a *defect against a background*, and false in general. There is an
+exact family of shape-preserving traveling waves, and some move **left**, toward
+the MSB.
+
+A crystal with denominator `d` rigidly translates iff **3 is a power of 2 mod
+d**: if `3 ≡ 2^k (mod d)` then `3·(a/d)` and `2^k·(a/d)` differ by an integer, so
+one `×3` step is *exactly* the crystal shifted left by `k` bits. No dispersion,
+no reshaping — a rigid glider of velocity `k` cells/step. Direction is set by
+where `k` sits in `p = ord_d(2)`: `k ≤ p/2` reads as a right shift, `k > p/2` as
+a left shift (`net = k − p`).
+
+```
+d=5   p=4    +3  →  right 1/step
+d=11  p=10   +8  →  right 2/step
+d=13  p=12   +4  →  LEFT  4/step
+d=29  p=28   +5  →  LEFT  5/step
+d=61  p=60   +6  →  LEFT  6/step
+```
+
+58 denominators below 400 translate; they are the shift-eigenvectors of `×3` —
+exactly the `d` for which `dlog₂(3)` exists. `d=13` verified: `000100111011 →
+001110110001 → 101100010011`, each row the previous shifted left 4, returning
+after 3 steps (4·3 = 12 = period). The figure shows the pink exact-velocity line
+tracking the texture in every panel.
+
+**This does not overturn the `log₂3` result — it sits beside it.** A localized
+*perturbation* on any background still disperses at `log₂3`; what travels rigidly
+is the whole periodic crystal, an eigenvector rather than a defect. So the medium
+carries coherent left-moving signals at rational velocity after all — the
+missing ingredient for a machine was never leftward transport, it was a
+*localized* left-mover. Which is exactly the open problem below.
+
+## The localized-left-mover search: settled (negative)
+
+(`tools/collatz_leftsearch.py`, `tools/collatz_leftmover.py`,
+`images/collatz-leftmover.png`.) Ran the big phase search on 16 cores. There is
+**no localized left-mover under the free-MSB bulk**, and the reason is one line
+of linearity that the search confirms exhaustively.
+
+The bulk map `x → 3x` is linear, so the disturbance of a packet on *any*
+background is `state − background = 3ᵗ·e₀`, independent of the background
+entirely. And `3ᵗ·e₀` for a localized `e₀` grows in bit-span at exactly `log₂3`
+per step, forever. The background is irrelevant; no packet, no phase escapes it.
+
+- **77,535 localized packets** (every shape to width 16, plus sparse packets
+  swept over all 210 phases) on a W=210 looping ring, 150 steps: min max-span
+  **203 of 210** — every packet fills the ring. **Zero** stayed within W/4. The
+  most-bounded one reached span 203 in 11 steps.
+- **20,000 random packets** under the true free-MSB edge: bit-span slope
+  **1.5851** (min 1.581, max 1.588) = `log₂3`, every one, no exceptions.
+- The left-movers that *do* exist are the traveling crystals: 2,022 denominators
+  below 20,000, **19.4 million** distinct patterns counting phase, all verified
+  to shift rigidly — and all non-localized (they fill the ring).
+
+So under the free-MSB half-open geometry, the honest picture is:
+**`collatz_leftmover.png`** — a traveling-crystal tail slides left at a rational
+rate `k` and feeds a head that grows left at `log₂3`; that is a real coherent
+left-moving structure, but it is periodic, not a localized glider. A localized
+one is impossible here, provably.
+
+**Where a genuine glider could still hide:** the one nonlinearity we removed to
+get the bulk — the Collatz **parity branch** (`x → 3x+1` or `x/2`). `x → 3x` is
+linear and *cannot* support gliders, full stop; the branched rule is not linear,
+so its perturbations do not obey `3ᵗ·e₀`. That is the search worth the CPU next:
+localized packets under the full branched rule, on the antidiagonal `(digit,
+carry)` CA, not the bulk. Everything above is the bulk; the glider question was
+always really a question about the branch.
+
+## Correction: the real (nonlinear) CA was searched, still no glider
+
+(`tools/collatz_glidersearch.py`.) The impossibility above was first argued from
+linearity of `x → 3x`. That is the **bulk value map, not the cellular automaton**
+— a real error. The true CA carries `(digit, carry)` on the antidiagonals
+`t = r+c`, where the update is a full adder and the carry is a **majority** gate,
+nonlinear over GF(2) (verified). The `3ᵗ·e₀` argument does not apply there, so
+gliders are not excluded a priori.
+
+So the real rule was searched: 262,143 localized `(digit,carry)` seeds on vacuum
+(all grow); 142 ethers found by enumerating cycles of the period-`p` CA
+(`p ≤ 8`); **1,310,680 defects** placed exhaustively on the 40 most structured
+ethers, 240 steps each, tracking the difference from the pure-ether evolution.
+**Zero gliders. Zero coherent left-fronts. Max quasi-lifetime 77 steps.**
+
+The structural reason turns on the boundary condition. `×3` grows every structure
+leftward; a bounded left-mover needs **consumption** to balance it. The only
+consumption in Collatz is the halving (LeastEdge eating trailing zeros = `/2`) —
+and that needs **trailing zeros at a terminating right edge**. A *looping* right
+edge (nonzero periodic tail) has none. So under exactly "free MSB + looping
+right" the dynamics is pure `×3`-with-carry, and the search shows it has no
+localized left-mover. The "runners down the right edge" are halvings, which live
+at a *terminating* right edge — the one model not yet searched.
+
+## Handoff — for the higher-CPU box
+
+**The live question:** make a *localized* pattern that spreads left — a finite
+wave packet / Rule-110-style glider that moves toward the MSB while staying
+bounded, not the full-ring traveling crystal above and not the `log₂3` light
+cone. Everything learned points at where to look:
+
+1. **Gliders live on ethers, and we only tried vacuum.** Every glider search so
+   far (`collatz_glider.py`) put a defect on the empty or all-ones background and
+   watched it disperse. Rule 110's gliders exist only against its periodic
+   *ether*. The untried search: take a **traveling-crystal background** (say
+   `d=13`, moving left 4/step), add a localized perturbation, co-move the frame
+   with the background, and look for perturbations whose support stays bounded.
+   This is the single most promising avenue and it needs the CPU — it is a search
+   over (background phase × perturbation shape × frame velocity).
+2. **Two traveling crystals of the same velocity superpose freely** (they are
+   CRT-independent if their denominators are coprime, both eigenvectors of the
+   same shift). A packet might be buildable as a *beat* between two left-movers
+   of nearly-equal velocity — a localized envelope on a carrier, standard
+   wave-packet construction. Check whether the envelope disperses or holds.
+3. **Boundary between two co-moving crystals.** The domain-wall result
+   (`collatz_bulk.py`) used *static* phases and the wall dispersed at `log₂3`.
+   Redo it with two crystals of the *same* translation velocity — the wall might
+   now be stationary in the co-moving frame, i.e. a bound left-moving kink.
+4. **The reversible (Fredkin) universe was never searched for gliders against
+   crystal ethers either** — only against vacuum. Same search as (1), in the
+   second-order rule where information is conserved.
+
+**Feedback from Lou, worth carrying forward (the corrections that mattered):**
+- The machine state is *not* a displayed row — the CA's true time-slices are the
+  antidiagonals `t = r+c`, and the carry is genuine state there (the `t = r`
+  "carry is derived" test answered a different question). A proper search may
+  need to work in antidiagonal / 2-bit `(digit, carry)` coordinates, where the
+  state space is larger than the digit-only model used everywhere above.
+- "Don't assume constraints I didn't ask for." The claim that unit cells *must*
+  be uniform textures was false — it came from picking small spatial periods.
+  Large cells (`W=60`, period 10) carry rich structure; `AAB`/`ABBA` block words
+  and true compositions all exist. When a search returns "impossible", suspect
+  the search was too narrow before believing the medium.
+- Persistence ≠ composition. A word that merely closes its orbit is not a
+  composition; a true composition keeps the *period* of its parts. Always report
+  both.
+- Show three full clean loops, cropped to the minimal unit — not the seed
+  transient filling in.
+- Render with **square cells** (aspect 1); vertical stretching destroys the
+  readability of the pattern.
+
+**What's solid (don't re-derive):** the `(a,b)` recipe lattice and its `log₂3`
+quasicrystal; the 2-adic self-affine residual; the machine impossibility for
+*periodic/looping* structures (rational-edge ⟺ cycle; loops need `√n`-length
+timing that the Pythagorean comma forbids); the bulk = `×3` with carries = Rule
+60 with carries, speed `log₂3`; a pattern is a rational `a/d`, persistent iff
+`3∤d`, spatial period `ord_d(2)`, temporal `ord_d(3)`; the concatenation charge
+law; the half-open universe (head = base-3 expansion of the tail's `a/d`); and
+now the traveling crystals. All of this is machinery the glider search can stand
+on.
+
+### Threads not pulled
+
+- **Explain the popcount excess.** Why do few-bit Walsh masks carry double
+  weight? It's the one measured deviation from an ideal cascade. A guess worth
+  testing: low-popcount masks are the smooth functions of n, and the first few
+  trajectory steps depend on n through arithmetic (carries), not raw bit
+  patterns.
+- **Per-octave antichains** — build one inside each octave rather than one
+  global, so the top of the range can't eat everything below it. Would give a
+  fair "each trajectory once" picture at every scale.
+- **Identify the residual law.** The `√log n` scaling suggests a random-walk
+  limit; the visible right skew suggests it isn't Gaussian. The increments now
+  look memoryless (postscript 2), so a CLT-style limit is plausible; nobody has
+  fit one.
+- **Identities outside the `(j, B)` scheme.** The 11.1% figure is an upper bound
+  on what's irreducible, not a proven floor.
+- (Answered along the way: the residual is *not* structureless — it's a 1%/bit
+  self-affine cascade, memoryless across levels, blind to base 3, with the
+  popcount excess as the one open anomaly. And "tree depth as y" collapses to
+  the tripling count `b`, which is the transform panel 2 already.)
+
+## The definitive answer on spreading left (`images/collatz-anchored.png`)
+
+Searched every model of the pure bulk (`x → 3x` with carry, the local rule when
+the halving/`+1` are "gargled away" far off): 262k vacuum defects, 1.31M
+exhaustive defects on 142 ethers, 2708 ether-domain walls, finite chunks. The
+result is one clean law, shown across a traveling crystal, a plain crystal, and a
+random block:
+
+> Under `×3`-with-carry every finite pattern is **anchored at its LSB edge** and
+> spreads **only toward the MSB, at exactly log₂3**. The interior keeps its
+> structure; only the MSB front garbles.
+
+The reason is that `×3` is **lower-triangular**: bit `j` of `3x` depends only on
+bits `≤ j` of `x` (`3x mod 2^k` depends only on `x mod 2^k`). So the low-order
+(LSB) side can never be disturbed from above — it is frozen — and all growth is a
+one-sided front advancing MSB-ward at the light-cone speed log₂3. You cannot make
+a pattern spread the other way, or at another speed, or as a bounded coherent
+packet. The only coherent movers are the full-width traveling-crystal
+eigenvectors (they translate rigidly; they do not localize).
+
+So "a pattern that spreads left" has a definite answer that depends only on which
+way "left" points: toward the MSB, **yes** — every pattern does, universally, at
+log₂3, and a traveling crystal does it while keeping ordered interior structure
+(`collatz-anchored.png`, left panel). Toward the LSB, **no** — that edge is
+frozen by lower-triangularity, in the pure bulk, for every pattern.
+
+## Do random MSB regions ever approach a repeat? No (`tools/collatz_msbscan.py`)
+
+Scanned ~1.1M MSB windows: random seeds, periodic tail, hundreds of thousands of
+window sizes, scoring how close the top N cells come to a spatial repeat. Run
+side-by-side against truly random bits:
+
+| MSB window N | x3 orbit best frac | random bits best frac |
+|---|---|---|
+| 24 | 1.000 | 1.000 |
+| 48 | 0.958 | 0.917 |
+| 64 | 0.879 | 0.889 |
+| 128 | 0.794 | 0.800 |
+| 256 | 0.712 | 0.698 |
+
+The two columns track to 2 decimals at every size, and both decay toward the
+random baseline as N grows. Tiny windows (<=32) hit frac 1.0 by pure chance in
+both; windows >= 44 never approach a repeat. So the MSB region of a x3 orbit is
+statistically indistinguishable from random bits - it is the equidistributed
+mantissa of 3^t, and it does not approach a repeating pattern.
+
+This is the MSB counterpart of the anchoring law: x3 is lower-triangular, so the
+LSB side is frozen/structured (that is where crystals and every repeating pattern
+live) and the MSB side is the disordered growing front. Repetition is something
+you build on the LSB side deliberately, never something that emerges in the MSB.
+
+## Re-checking the anchoring law on the ACTUAL diagonalized CA
+
+(`images/collatz-diagonal-anchor.png`.) The anchoring result and the MSB scan were
+computed on the value map `x → 3x` (rows = Collatz steps), NOT the diagonalized
+`(digit,carry)` antidiagonal CA. Re-ran the anchoring experiment on the real CA: a
+crystal chunk seeded as `(digit,carry)`, evolved by the majority-carry rule, on
+columns c (low c = LSB/right, high c = MSB/left).
+
+Result: the low-c (right) edge stays frozen and the high-c (left) edge grows at
+log2(3), on-shell (carry=0) AND off-shell (arbitrary carry). Off-shell configs
+perturbed the right edge by only ~3 cells transiently, never sustained. So the
+lower-triangular anchoring holds on the true CA too - but this was verified, not
+assumed. The rule is: value-map results about the LSB/MSB asymmetry do carry over,
+but they MUST be checked on the diagonalized CA, because off-shell carry states
+exist that the value map cannot represent.
+
+Survival note (from Lou): a pattern that cannot grow left fast enough is eaten by
+the right side. In arithmetic: x3 advances the left edge at log2(3) ~ 1.585
+bits/step, while the halvings consume ~2 bits/step (E[v2(3n+1)] = 2). Net -0.415 -
+the right wins, everything is eaten, trajectories fall to 1. A pattern survives
+only if it grows left FASTER than it is consumed, i.e. has fewer than log2(3)
+halvings per odd step - the high-growth / few-halving structures (the 2^k-1 family
+and the traveling crystals whose phase velocity k > 2). That growth-vs-consumption
+balance, on the diagonalized CA WITH the right-side halving included, is the model
+the machine question actually lives in - and the one search not yet run.
+
+## Orientation convention (to stop the confusion)
+
+Lou's convention, used from here on: **MSB = LEFT, LSB = RIGHT.** The x3 growth
+front advances toward the MSB = leftward; the LSB edge is frozen on the right.
+matplotlib's default draws higher column index on the RIGHT, so unless the column
+axis is reversed, MSB lands on the right and growth *looks* like it expands right -
+which is backwards from this convention. Reverse the column axis (MSB-left) in every
+spacetime render. `images/collatz-diagonal-anchor.png` is corrected;
+`collatz-anchored.png` still uses MSB-right and should be flipped if revisited.
+
+## Loop the MSB: WRONG turn (corrected)
+
+I claimed `n = 2^(W-1)-1` (a block of ones) is a fixed point that stops LSB
+progression. **That was an error** - Lou caught it. It was an artifact of modelling
+"loop the MSB" as `mod (2^W-1)` (end-around carry), which folds the MSB overflow
+back onto the LSB and fakes a fixed point (`3*65535+1 = 196606 ≡ 65535 mod 131071`).
+That wrap is number theory, not the CA. Under real `3n+1` a block of ones is NOT
+stable: `2^16-1 -> 10111..1 -> 100011..1 -> ...`, the pattern changes completely
+every step.
+
+What is actually true: the all-ones number STARTS a chain where each step has
+exactly one halving (v=1, the slowest possible LSB progression), but the pattern
+morphs every step - it is not a stable block, it just keeps shedding one bit at a
+time for ~k steps. **The correct answer** (2-adic / looped-MSB done right): "loop the MSB" means the
+MSB pattern repeats forever to the left = a 2-adic integer. There the all-ones
+pattern is `-1 = ...1111`, and it IS a fixed point: `3(-1)+1 = -2`, halve once, back
+to `-1`. It progresses at exactly ONE halving per step - not zero (that was the
+artifact), but the slowest a nonzero pattern can go. It is unique: v=1 forever
+forces `n = -1 mod 2^k` for every k. Every other looped-MSB pattern halves faster
+(`-1/7 = ...001001` -> 1.995/step, `-5 = ...11011` -> 1.5, `-1/3 = ...0101` ->
+2.475). A finite block of ones only approximates `-1` for ~k steps while its pattern
+morphs. So the slowest-LSB-progression pattern is the looped all-ones MSB, at rate
+1, and it is genuinely fixed - the corrected, real version of the retracted claim.
+
+**BUT (Lou's second catch): `-1 = ...1111` is NOT a legal finite pattern.** It is a
+2-adic integer, genuinely infinite to the left, and it does NOT loop in a normal
+finite two-sided window. Tested every finite convention: under mod 2^W (overflow
+falls off, the physical one) all-ones DECAYS one bit per step (111..1 -> 011..1 ->
+001..1, eaten from the top); under mod 2^W-1 it is degenerate (all-ones = 0). The
+`0111..1` fixed point only exists under the end-around-carry artifact. So there is
+no finite realizable all-ones fixed pattern - the clean rate-1 answer lives only in
+the 2-adic (infinite) limit. In any real finite window the slowest patterns are
+transients (all-ones sheds one bit per step for ~k steps, then morphs), not fixed
+structures. The honest state: "slow/stopped LSB progression" has no finite fixed
+solution; it needs either a terminating LSB edge (for halving to mean anything) or
+an infinite 2-adic MSB (for -1 to be fixed), neither of which is a finite two-sided
+looped window.
+
+# ====================================================================
+# REPRODUCTION ON THE REAL AUTOMATON (CA.CollatzStep) — hex
+# ====================================================================
+
+After Lou pointed out that every CA experiment above had been run on the WRONG
+automaton (pure x3 "bulk" / value-map / a mod-artifact), the real automaton was
+established and verified (`tools/collatz_real.py`, a faithful port of
+CA.CollatzStep) and every experiment was reproduced on it, rendered in the app's
+hex layout (`tools/collatz_hex.py`). The verified fact: each row is one ODD
+Collatz step (3n+1 then strip all trailing zeros); seed 27 -> 27,41,31,47,71,107,
+161,121,91,137. Geometry: a diagonal band, LeastEdge (halving) eating from the
+LSB/left and advancing right, MSB growing at high-c/right.
+
+## What the real automaton actually does
+
+Every number descends to 1. There is exactly one cycle (the trivial 1). So the
+persistent structures we "found" under x3 do NOT exist here - they were
+linearization artifacts. Concretely:
+
+- **Crystals are not special** (`images/collatz-hex-*.png`). x3-crystal seeds
+  descend in the SAME number of steps as random numbers of the same 1-density:
+  d=7 crystal 107 steps vs random-same-density 55-170; d=13 crystal 35 vs 58-173.
+  They fall inside the random band. So the CRT/denominator crystals, the traveling
+  crystals, the gliders, the domain walls, the compatibility atlas - all of those
+  were properties of the x3 map, not of the real automaton.
+
+- **No gliders, no left-movers, no traveling waves.** The real automaton is not a
+  linear map; a "pattern" is just part of a number that is descending. Nothing
+  persists or translates coherently - it all flows into the descent to 1.
+
+- **Edges (the survival balance).** MSB grows at log2(3) = 1.585 bits/odd-step
+  (from x3); the LeastEdge consumes at the average halving count v per step. Net =
+  1.585 - v. Measured: all-ones 2^50-1 v=1.824 (net -0.239), random v=1.984, sparse
+  v=2.046. Consumption always beats growth, so every number shrinks to 1. This is
+  the real-automaton form of "a pattern that can't grow left is eaten by the right":
+  survival needs v < 1.585, which no number sustains.
+
+- **Density of 1s = slow descent.** The one property that carries over intact.
+  all-ones 2^40-1 climbs first (v near 1) then descends over 191 odd steps; a
+  same-length sparse number takes 56; random 119. In hex the all-ones seed
+  (`collatz-hex-allones_240-1.png`) shows the solid climb region up top, the
+  Sierpinski carry texture, and the green LeastEdge consuming it - a striking
+  match to the record-holder family from the very first stopping-time graph.
+
+## What was ALWAYS about the real automaton (still valid, unchanged)
+
+The value-based results were never about x3 - they are about the Collatz function
+on integers (the odd trajectory = the rows of CA.CollatzStep). These stand as-is:
+the stopping-time log-x graph and its (a,b) recipe lattice / log2(3) quasicrystal;
+the 2-adic self-affine residual and the noise cascade; the transforms/shear/fold/
+wrap; the residue-class reductions/leaves/sieves; the half-machine growth and the
+cycle lower bounds; the left-edge = t*log2(3)+log2(a/d) instrument. These describe
+the descent statistics the hex renders show one trajectory at a time.
+
+## Bottom line
+
+On the real automaton there is no zoo of crystals and gliders - there is one
+behavior, descent to 1, whose rate is set by the density of 1s and whose statistics
+are the quasicrystal/2-adic structure we mapped. The x3 "bulk" is a genuine but
+DIFFERENT automaton (ca-mul3.js); its crystals are real about x3 and unreal about
+Collatz. The hex reproduction makes the distinction concrete: same questions, real
+rule, and the persistent-structure answers all collapse to "it descends."
+
+# ====================================================================
+
+## The bridge: the composition atlas meets the LeastEdge rhythm (2026-08-21)
+
+`tools/collatz_bridge.py`; figures `images/collatz-bridge-hex.png`,
+`collatz-bridge-wedge.png`, `collatz-bridge-stats.png`. Scope labels per
+observable inside the script docstring. Setup: integer seeds whose low region
+is kA repeats of width-L block A, then kB repeats of block B, then a 1 as MSB
+cap; the real automaton (rows = odd steps, verified against the grid: LE
+extent per row == cumulative v, and bulk bits sit at CONSTANT columns) eats
+the A region and then the B region while we record the v-sequence.
+
+**Q1 - crystal vs random tails [real-CA rows].** A crystal low region is
+consumed to an exactly periodic beat: the measured v-sequence equals, step for
+step, the odd-map orbit of the 2-adic rational -A/(2^L-1) (180/180 crystals,
+L=5,7,9, 240-bit regions). Random regions have no such order: autocorrelation
+peak 0.71 +- 0.16 (crystals) vs 0.21 +- 0.04 (random), Cohen's d = 4.9. Mean
+v barely differs (2.06 vs 2.01) - the signature is order, not rate.
+
+**Q2 - the boundary is exact [real-CA rows].** Over 1888 composed pairs the
+rhythm diverges from the pure-A ideal exactly when the halving window pokes
+past the interface bit: bits-consumed-at-divergence minus kA*L has median +1,
+IQR 0..1, max 6; a blind changepoint (break of the learned A-period) finds
+the same step 1404/1404. Parity-window determinism, seen as CA physics.
+
+**Q3 - charge: bulk story yes, rhythm story no.** Three geometries:
+- Domain pairs A^40 B^60: the interface radiates a disorder wedge MSB-ward
+  into B at ~log2(3) bits/step in the mean (the archimedean image of the
+  consumed region - 3^t spreads the A-part's influence upward). The wedge is
+  IDENTICAL for matched and mismatched charge (d = -0.08 / -0.04); it is not
+  the atlas law at work, and truecomp already said A^k B^k' is never a true
+  composition. Because of the wedge the post-boundary rhythm never re-locks
+  within a 300-bit B region and B-phase vbar is random-like (2.01-2.03,
+  |d| <= 0.10).
+- Small-wedge relock (kA=12): the rhythm DOES re-lock onto a
+  (2^L-1)-denominator cycle after the wedge is eaten; relock delay matched
+  109 +- 24 vs mismatched 107 +- 24 steps (L=5, d = -0.10; L=7 d = +0.02).
+  Recovery is gated by wedge size, not charge.
+- Tilings (AB)^40, where matched charge IS a true x3 composition: consumption
+  vbar 1.791 vs 1.793 (d = +0.01). An exact cycle census of ALL width-p
+  crystal rhythms (p = 5,7,9,10,12,14) shows eventual-cycle vbar flat in
+  v3(X) - no charge rate law exists even for true compositions.
+
+**Side results [value].** (1) Among all width-p crystals the only negative
+(growing-side) cycle reached is all-ones -> -1 (v=1); every other crystal
+rhythm escapes to a positive cycle with vbar ~ 2 - one more face of
+"everything shrinks". (2) X = 341 = (2^10-1)/3 makes the tail exactly -1/3:
+3n+1 annihilates the whole 400-bit region in ONE step (v = 402) - the perfect
+fuse, and maximally mismatched in charge.
+
+**Honest negative, stated plainly:** the x3 charge - the quantity that decides
+composability in the bulk atlas - has NO measurable effect on the LeastEdge
+rhythm, the consumption rate, or the recovery time in the real automaton
+(|d| <= 0.1 everywhere, ~2400 runs). What the rhythm does carry is the
+composition itself (periodicity) and the block boundaries (to the bit), and
+what destroys structure at a domain wall is a universal archimedean wedge,
+whose size - not charge - sets how long the rhythm stays disordered.
+
+
+## Agent sweep synthesis (2026-08-21, four parallel agents)
+
+Full reports live in the four tool docstrings; figures in images/. The
+combined picture:
+
+1. **The rhythm is programmable but prepaid.** A crystal tail A (width L) is
+   consumed to a beat that equals, step for step, the odd-map orbit of the
+   2-adic rational -A/(2^L - 1): 180/180 crystals, Cohen's d = 4.9 vs random
+   [real-CA]. Block boundaries are audible in the rhythm to the bit
+   (1404/1404 changepoints at the predicted step). And the general law: any
+   rhythm's lifetime equals the number of 2-adic digits of its rational
+   runner present in the tape; overshoot is fair-coin geometric; no structure
+   cheats. The interface is a player piano: the tape is the roll, and the
+   only way to play longer is a longer roll.
+2. **Charge is void physics, not interface physics.** The x3 charge law
+   governs persistence in the void sector (and there the whole atlas is
+   genuine real-CA physics, since void digit patterns provably run pure x3
+   until absorbed), but it is silent at the LeastEdge: |d| <= 0.1 on every
+   rhythm observable across ~2400 runs.
+3. **The composition algebra is a signed 3-adic accounting.** Strict triples
+   (ABC legal, all pairs illegal) exist exactly for odd L; k=4 obeys an
+   alternating sum, so arrangement matters and palindromes rescue forbidden
+   pairs. Machine-flavored: parts that only work in the right order.
+4. **One tape, one machine.** Off-shell space is thin (on-shell = immediate
+   attractor; carries live one slice); the only rich off-shell episodes are
+   multi-machine sectors (x3 ghosts in the void, parasite LeastEdge engines),
+   and every one ends with a single machine owning the tape.
+5. **A curiosity worth keeping:** X = 341 = (2^10 - 1)/3 as a tail is the
+   fraction -1/3, and 3n+1 annihilates the entire designed region in ONE step
+   (verified v = 400 on a 400-bit region). The perfect anti-fuse.
+
+Where this leaves the machine program: the three habitats are now mapped
+(void = x3 algebra, band = transport, interface = prepaid player piano), and
+each is individually closed to bootstrapping. The remaining open door is the
+one that equals the Collatz divergence problem itself.
+
+## The hailstone-record protocol (synthesis of the machine tools)
+
+(`tools/collatz_protocol.py`.) Right edge that blocks the spread (all-ones tape,
+v=1 guaranteed) + left edge that preserves itself (cargo bits ride the climb
+untouched) + patching (lift/glue) combine into a record-search protocol:
+restrict to n = -1 mod 2^(j+1) (j guaranteed climb steps), search the preserved
+cargo bits for a lucky fall. Pilot at 48 bits, equal effort per class: mean
+steps rise +2.41 per designed bit exactly as predicted; best-found peaks at the
+HYBRID sweet spot (j=24: 487 odd steps, 10.15 steps/bit, champion verified) and
+collapses when design eats the whole search space (j=40). Blockers, all
+previously measured/proved: the fuse law (1 bit per designed step, no
+bootstrap), the 0.585 exchange rate (carries are hash), fall genericity (luck
+~ ln effort), chaining collapse (profile-independent total: ~4.82 steps per
+designed bit ceiling), and the fact that beating that ceiling forever IS the
+divergence problem. Designed giants give certified absolute records (linear in
+seed size); the small-n ratio records are luck and cannot scale.
+
+## The monster hunt: executed (`tools/collatz_monster.py`)
+
+The protocol above, run for real on 16 cores overnight (about 6 hours of hunt
+plus a 7-minute certification sweep). Two independent kinds of monster, both
+verified exactly in Python, no float, no modular window.
+
+**Designed, certified, no search.** n = 2^K - 1, run to completion exactly:
+
+| K | seed bits | odd steps | peak bits | predicted peak | odd/bit | runtime |
+|---|---|---|---|---|---|---|
+| 2^20 | 1,048,576 | 5,044,234 | 1,661,954 | 1,661,954 | 4.811 | 20 min |
+| 2^22 | 4,194,304 | **20,229,242** | 6,647,814 | 6,647,815 | 4.823 | 127 min |
+
+Predicted peak is K*log2(3) and both land within 1 part in 1e7; the guaranteed
+climb is exactly K steps at v=1. The 2^22 monster is ~52M steps counting
+halvings, summit ~2M decimal digits. This scales linearly with K forever, so
+"absolute record" is a purchasing decision, not a search.
+
+**Searched, and PROVED class-maximal.** Classes n = (m << (j+1)) - 1:
+
+| class | n | odd | delay | peak bits | odd/bit |
+|---|---|---|---|---|---|
+| 48/16 | 268726926180351 | 581 | 1550 | 62 | 12.10 |
+| 64/32 | 12503150712101797887 | 710 | 1899 | 86 | 11.09 |
+| 80/48 | 1188923081869663116722175 | 868 | 2324 | 113 | 10.85 |
+
+Each class leaves exactly 31 cargo bits, so it is only 2^30 wide. The random
+hunt (~290e9 trials) and a deterministic sweep of every single m returned the
+SAME three champions, so these are class maxima, not lucky draws. Cross-check
+that the coverage was genuine: the exhaustive sweep found 5485 seeds in the
+80/48 class that exceed 2^125, and the random hunt had logged exactly 5485
+distinct such seeds. All 5485 were rerun at 512-bit precision: best 729 odd
+steps, below the champion, so the discarded high-climbers hid nothing.
+
+**What it confirms.** odd/bit falls monotonically with size (12.10, 11.09,
+10.85, then 4.81 for the giant): the search bonus decays like ln(effort) while
+the designed floor stays at ~4.82 steps per designed bit. Design gives
+unbounded totals; search gives a shrinking rate premium at small size only.
+Every blocker listed in the protocol section held, quantitatively.
+
+## Composable blocks in the real CA: the zoo and the splice law (2026-08-22, `tools/collatz_compose.py`)
+
+The actual assignment behind "find the monster machine", restated by Lou:
+find LEFT EDGE + REPEATING PATTERN + RIGHT EDGE triples that are more
+efficient than normal - spread left, slow the right, and above all COMPOSE.
+Not numbers: tiles. The number is only recovered by walking back from the
+row. Everything below is [real-CA]: every claim is realized as an integer
+tape and run in CA.CollatzStep semantics (one composed tape re-verified
+cell-by-cell against `collatz_real.run`).
+
+**The identification that organizes everything.** In tape coordinates the
+interior of any zone evolves under PURE x3 at fixed positions - the +1
+injections never reach it (their influence stays within O(log T) of the
+LeastEdge; this is the void-sector physics again, now in the interior). So:
+
+- a repeating word + its right-edge termination motif IS a 2-adic rational
+  x (eventually periodic expansion = rational with odd denominator);
+- the rhythm at the LeastEdge is the Collatz orbit of x;
+- "the pattern persists" = x is on a CYCLE of the Collatz map on rationals:
+  x = c/(2^S - 3^l) for its rhythm (v_1..v_l), sum S;
+- "spreads left" = vbar = S/l < log2(3) = 2^S < 3^l = NEGATIVE denominator:
+  a growing block is a negative 2-adic rational. "We are in the middle of a
+  giant number" is literal: the giant is -c/(3^l - 2^S).
+
+**The zoo** (`collatz-compose-zoo.png`). Enumerating all rhythms l <= 7 with
+vbar < log2(3): 70 distinct cycles, every one realized and rhythm-locked in
+the real system exactly as long as predicted (0 failures). Highlights:
+
+| block | word q | density | rhythm | eats | net growth |
+|---|---|---|---|---|---|
+| d1 (fuse) | 1 | 1.00 | 1 | 1.000 | +0.585 |
+| d11 | 10 | 0.50 | 1,1,2 | 1.333 | +0.252 |
+| d49 | 21 | 0.48 | 1,1,1,2 | 1.250 | +0.335 |
+| d179 | 178 | 0.50 | 1,1,1,1,2 | 1.200 | +0.385 |
+| d601 | 25 | 0.36 | 1,1,1,1,1,2 | 1.167 | +0.418 |
+| d1931 | 1930 | 0.50 | 1,1,1,1,1,1,2 | 1.143 | +0.442 |
+| d31 | 5 | 0.20 | 1,1,1,1,1,4 | 1.500 | +0.085 |
+| d139 family | 138 | 0.50 | e.g. 1,1,3,1,2,1,2 | 1.571 | +0.014 |
+
+Every block eats slower than the generic 2 cells/step: all "more efficient
+than normal". The fuse stays the extremum (v >= 1 is hard, and x = -1 is the
+unique 2-adic fixed point of (3x+1)/2), but the frontier rhythm (l+1 ones
+then one 2... i.e. 1^l,2) approaches fuse-grade growth with HALF-density
+words; d601 sustains +0.42 bits/step with a word that is only 36% ones.
+Integer cycles (-1, -5, -17) are exactly the blocks with the all-ones word
+and exotic right-edge motifs; the rational cycles are the genuinely new
+spatial textures (d11 diagonal weave, d217 triangle lace, d31 sparse bands).
+
+**Raw cuts almost never compose** (`collatz-compose-wall.png`, top). Butting
+A's words straight onto B's block: B's rhythm is exact until the LeastEdge
+crosses the wall, then the orbit is thrown out of every cycle basin and the
+pattern decays at generic eating (~1.8-2.0 cells/step). Matrix over 6
+representative blocks x every wall phase, with an honest classifier (a lock
+must persist until the designed tape is exhausted): self-composition is
+seamless ONLY at word phase 0; cross-block raw cuts essentially never lock,
+and the rare captures (d11-over-d31, d49-over-d31) take 80-121 scrambled
+steps first - persistence, not composition.
+
+**The law is exact.** The handoff class equals the basin of the wall's
+2-adic value under the Collatz map on rationals, computed in exact
+arithmetic: 0/360 disagreements between the prediction and the real runs
+once the tape is long enough to outlast the predicted transient. The
+"domain wall radiation" of the earlier bridge section is, at the LeastEdge,
+just basin escape - deterministic and computable, not noise.
+
+**The splice law** (`collatz-compose-wall.png` bottom, and the three-block
+program in `collatz-compose-triple.png`). ANY block composes over ANY block
+with ZERO transient if the wall is computed instead of cut: take A's cycle
+rational and pull it back through `periods` full periods of B's rhythm
+(exact preimages z -> (z*2^v - 1)/3). The runner law then FORCES the low S
+digits to be B's own word - B's identity cannot be disturbed - and the
+handoff lands exactly on A's cycle. Verified for pairs in both orders and
+for the three-block program d11 -> d49 -> d31 (74 steps, both walls
+zero-transient, every rhythm section exact). Cost, stated honestly: above
+the wall the upper block initially sits DRESSED - its digits are the
+x3-preimage of its word (denominator d*3^w) - and anneals into its visible
+word exactly when its turn comes. Raw cut shows the word immediately but
+dies at the wall; the splice hides the word until the wall and lives. The
+tape is a program: rhythm sections are compiled back-to-front by preimage,
+and the sea executes them in order.
+
+Scope notes: exact rationals are the design tool; nothing is claimed from
+them alone - each construction is a finite integer run in the real
+dynamics. A finite tape still decays after its program ends (sustained
+growth forever = the open problem, untouched). Images:
+`collatz-compose-zoo.png`, `collatz-compose-wall.png`,
+`collatz-compose-triple.png`.
+
+## The left edge: noise vs pattern past the start column (2026-08-22, `tools/collatz_leftedge.py`)
+
+Right edge done (blocks, splices); this is the other edge. Question as
+posed: find a quantifier separating noise from pattern, then deep-search for
+seeds that put anything other than noise in the territory PAST the seed's
+own leftmost column. Everything [real-CA]: real runs, with the pure-x3
+comparison used only as a verified law, not a substitute.
+
+**Quantifier.** Three features of the fresh region (tape cells at absolute
+positions >= the seed's MSB), z-scored against random seeds of the same
+size: zlib compression gain vs within-row shuffles, mean per-row max
+autocorrelation, mean per-row longest constant run. Random seeds sit at
+|z| < 3; threshold z > 5.
+
+**Physics laws, verified before searching.**
+- LAW 1 (exact): above LeastEdge + 40 cells the fresh region is bit-for-bit
+  the pure x3 flow - cell (row r, position p) = bit p of 3^r * n. 300 seeds
+  x 30 rows, 35,590 cells, 0 mismatches. The +1 carries live at the sea:
+  the highest ripple ever observed reached 18 cells above the LeastEdge.
+  So the left edge is the ARCHIMEDEAN (real-mantissa) side of the machine,
+  as the right edge is the 2-adic side.
+- LAW 2 (no CA magic): with adequate tape thickness the quantifier gives
+  the same score to the real region and the synthetic pure-x3 region
+  (96-bit seeds: max |dz| = 1.6 over 53 seeds incl. all structured ones).
+  At small thickness the affine correction C_r (from the +1s) can tip a
+  marginal aim - literally 0111111... -> 1000000... - so tiny seeds can be
+  structured in the real CA while their raw x3 flow is not. The CA neither
+  creates nor destroys left-edge structure beyond this near-sea tipping.
+
+**The null field is really null.** Random seeds, the fuse, every zoo block
+word (d11, d49, d31, d217), 3-smooth seeds, and sparse seeds: ALL noise
+(|z| < 2). Nothing we built for the right edge leaves any signature past
+the start column. Sparse seeds' void wedges live BELOW the start column,
+outside the region.
+
+**The one structure mechanism: ternary aiming.** n ~ P * 2^g / 3^k with
+low-complexity P. Then row r of the fresh territory is the leading-bit
+field of P / 3^(k-r): the region anneals through the ternary words
+(...000111000111..., ...0101...), crystallizes into P surrounded by a zero
+field exactly at step k, then P's own x3 river regrows at 1.585 cells/step.
+Verified constructively at z ~ 12-19 (96-bit seeds; unbounded with size).
+Images: `collatz-leftedge-crystal.png` (P=1: pure crystallization),
+`collatz-leftedge-both.png` (BOTH edges programmed on one tape: d11 rhythm
+right, P=101101 materializing left, zero interference - halvings never
+touch the mantissa, the mantissa never touches the rhythm).
+
+**Deep search agrees and finds nothing else.**
+- Exhaustive scan of every odd 18-bit seed (31,658), 22 steps: 251
+  structured (0.8%). The top of the list is entirely P-aimed (P = 1, 13,
+  17, 45, 51, 63... at k <= 19); aiming enriches structure ~25x over the
+  base rate (`collatz-leftedge-quantifier.png`); the remaining structured
+  seeds are aims of the affine flow (LAW 2 tipping), same mechanism.
+- Hill-climbing on 96-bit seeds (24 restarts x 320 flips) plateaus at
+  z ~ 4.6: the aimed set is measure-zero and gradient-free. Its best
+  climber had in fact stumbled onto a weak aim (err 1e-4 at k=6). Search
+  cannot find the left-edge patterns; they must be designed - the same
+  design-beats-search law as the monster hunt, now on the other edge.
+
+Bottom line: the left edge past the start column is the x3 mantissa flow,
+full stop. Its only patterns are the ones you aim into it, they are
+transient by nature (log2(3) is irrational: no periodic left edge exists),
+and they compose freely with everything on the right edge.
+
+## "Search a LOT more": the expanded left-edge hunt (2026-08-22, second pass)
+
+Lou pushed back on the first pass's tidy conclusion. He was right to. The
+expansion (new frames, new scales, new designed families) produced one
+CORRECTION, one confirmation at scale, and two new constructive laws.
+
+**CORRECTION - the front is a TIME QUASICRYSTAL, not noise**
+(`tools/collatz_river.py`, `images/collatz-river-quasicrystal.png`).
+The first pass scanned rows in tape alignment and z-scored per seed, which
+is blind to (a) structure aligned to the moving MSB front and (b) structure
+shared by ALL seeds. In the MSB-aligned frame, the front texture returns at
+lag m to a depth of -log2|frac(m*log2 3)| - 1 bits: sharp peaks at the
+continued-fraction convergent denominators of log2(3) - m = 12, 41, 53,
+306, 359, 665 - and the whole Ostrowski forest of their combinations.
+Measured depth = predicted depth to ~0.1 bit at every lag, on real runs,
+for every seed, seed-independent. Lag 665 aligns 13 leading bits. The
+left edge's "noise" has a complete quasi-periodic skeleton: it is the
+continued fraction of log2(3) made visible. The earlier flat "the river
+is noise" claim is retracted; correct statement: the river carries no
+PER-SEED structure (except aiming), but is universally quasi-periodic in
+time.
+
+**Confirmation at scale** (`tools/collatz_bigscan.py`). Stage 1: cheap
+per-row features (constant runs + exact periods 2-8) in BOTH frames, 14
+cores; thresholds at the random MAX (not a percentile). Stage 2: every hit
+mechanism-verified against the pure x3 flow (aim-error thresholds were
+dropped as vacuous - with many patterns P allowed, every integer is
+trivially "close to an aim"; the honest test is whether the synthetic
+flow reproduces the hit's structure scores).
+- exhaustive odd 23-bit (2,097,152 seeds, T=30): 2176 hits = 1834
+  mantissa-explained + 329 affine-tipped (the +1s completed a marginal
+  aim) + 13 broken by the +1s. Zero outside the mechanism.
+- random 400k x 48-bit, 150k x 96-bit, 30k x 256-bit, 5k x 700-bit
+  (T up to 500): 122 hits, ALL mantissa-explained (one tipped).
+No second per-seed mechanism exists at any scale probed.
+
+**New law 1 - a flash never dies** (`images/collatz-leftedge-echoes.png`).
+A designed crystallization at step k re-appears at k+12 (6 bits), k+53
+(8), k+106 (7), k+306 (8), k+359 (9), k+665 (14 bits) - measured on a
+real 537-bit run of 800 steps, matching the convergent depths. Pre-echoes
+exist too (k-12, k-53: the flash announces itself). The quasicrystal
+skeleton carries every aim through time in both directions.
+
+**New law 2 - the layer cake** (`images/collatz-leftedge-layercake.png`).
+Aims at separate tape heights are independent: n = sum of P_i*2^(g_i)/3^(k_i)
+layers (zero bands between) makes each layer crystallize at its own step
+k_i at its own height, after which its river refills the band above. The
+left half of the tape is a billboard with a schedule. Combined with the
+first pass: rhythm program on the right edge, flash schedule on the left
+edge, all on one integer, no interference.
+
+Method note, kept honest: the first pass's classifier ("structured seeds
+are P-aimed, err < threshold") was quietly circular at scale and was
+replaced by mechanism verification. And the null-field table stands:
+random, fuse, zoo words, 3-smooth, sparse - no per-seed left-edge
+signature; their fronts all ride the same universal quasicrystal.
+
+## The ambitious pass: 4.1 billion seeds and a ten-million-step echo (2026-08-23)
+
+Third left-edge pass ("you have the cpus"), C scanners on 16 cores
+(`tools/leftscan/`), stage-2 exact verification in Python
+(`tools/collatz_verifyhits.py`).
+
+**The scan.** Four channels per seed, scored in bits-of-evidence and
+calibrated at the MAXIMUM over millions of random seeds: tape-frame rows,
+MSB-aligned front rows, fixed-COLUMN time-periodicity (a frame no earlier
+pass had checked), and per-seed quasicrystal anomaly (does any seed beat
+the universal agreement curve?).
+- EXHAUSTIVE over every odd 32-bit seed (2,147,483,648 seeds, 40 steps):
+  388 hits. Row channels: 176 mantissa-explained + 35 affine-tipped + 0
+  broken. Vertical channel: 177, every one with real == synthetic anomaly
+  (the null tail of the statistic, not physics). Zero unexplained.
+- RANDOM 2,000,000,000 seeds at 64 bits (60 steps): 6,392 hits. Row
+  channels: 4,350 mantissa-explained, 0 tipped, 0 broken. Vertical: 2,042,
+  top 400 verified real == synthetic. Zero unexplained.
+- The fixed-column channel never fired on anything but aims: no tape cell
+  anywhere in 4.1 billion seeds oscillates periodically in time.
+So after ~4.15 billion seeds across 18-700 bits in three frames: the left
+edge past the start column has exactly ONE per-seed mechanism (archimedean
+aiming, including its affine-tipped variant) riding on exactly ONE
+universal structure (the quasicrystal skeleton).
+
+**The echo ladder, climbed to the end** (`tools/collatz_deepladder.py`,
+`tools/leftscan/giantladder.c`, `images/collatz-echo-ladder.png`).
+A flash designed at step 40 returns at EVERY continued-fraction convergent
+denominator of log2(3), depth = -log2|frac(m log2 3)| - 1 computed in
+exact integer arithmetic:
+
+| lag m | 12 | 53 | 306 | 665 | 15,601 | 31,867 | 79,335 | 111,202 | 190,537 | 10,590,737 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| measured | 6 | 8 | 8 | 14 | 14 | 17 | 17 | 18 | 22 | **24** |
+| predicted | 4.7 | 7.4 | 8.4 | 13.0 | 14.2 | 15.5 | 16.5 | 16.6 | 22.4 | 22.7 |
+
+The last rung is a real run of a 4,573,972-bit tape for 10,590,781 odd
+steps (977 s, direct-ABI libgmp): the pattern scheduled at step 40 is
+still readable TEN AND A HALF MILLION steps later, 24 bits deep, after
+the tape has burned from 4.57M bits down to 172k. The flash is not a
+transient that decays; it is a resonance of the continued fraction that
+the machine carries as long as the tape lives.
+
+Postscript with faces (`tools/collatz_render_wild.py`): the specimens
+themselves. `collatz-wild-aims.png` - the most crystalline seeds that EXIST
+among all 2^31 odd 32-bit integers (champion n = 3,967,855,899: natural
+P=1 flash at step 19 with a 23-bit field; runner-up n = 3,086,110,143:
+P=110 at step 21) and the best of 2e9 random 64-bit seeds
+(n = 11,208,289,882,178,220,493: P=1 at step 32). Nobody aimed them; they
+are where the mantissa flow happens to graze a power of 2.
+`collatz-tipped.png` - the affine tipping cell by cell (n = 145,471): the
+pure flow crystallizes as ONES (2^g - eps), the real machine's +1 carries
+tip it over into ZEROS: same crystal, opposite polarity, visible only in
+the real dynamics. `collatz-echo-closeup.png` - echo rows at bit level:
+at exactly +665 / +15,601 / +190,537 the leading bits collapse back to the
+flash's field; one step to either side is generic river.
+
+## The big-tape campaign: 168 million large automata (2026-08-23, `tools/leftscan/bigtape.c`)
+
+Lou: the interesting territory is 1000+ bits. Scanner rebuilt on bignum
+(direct-ABI libgmp), four channels re-tooled for scale: front-64 rows,
+BASE-WINDOW rows (bits at fixed absolute height [b0, b0+64) just past the
+start column - genuinely distinct from the front on big tapes), base-window
+time-columns, and the per-seed quasicrystal anomaly. Bits-of-evidence
+scoring, thresholds at the random maximum per configuration.
+
+Method note (a real bug, caught and fixed): the vertical-anomaly channel is
+an almost deterministic constant (~1.15032) at large row counts - the
+universality of the quasicrystal again - and printing its calibration
+maximum at 4 decimals ROUNDED IT DOWN below the population median, which
+made 95% of seeds "hits". Threshold now carries a +0.05 margin; any true
+per-seed anomaly would clear it by orders.
+
+Results (T = 900 / 1800 / 3600 odd steps):
+- 136,000,000 x 1024-bit: 88 hits, ALL mantissa-explained (0 tipped, 0
+  lost) after fixing the verifier to gate real and pure flows on the same
+  row set.
+- 25,600,000 x 4096-bit: 87 hits, ALL mantissa-explained.
+- 6,400,000 x 16384-bit: 55 hits, all the column channel's null tail,
+  all reproduced by the pure flow.
+Champions are exactly the extreme-value prediction: ~34-37 bits of
+constant field, i.e. the best natural aims that a sample of this size
+should contain, and nothing more. The specimens:
+- `collatz-bigwild-b1k.png`: front champion of the 1024-bit universe -
+  a natural ~40-bit zero wedge opening at step 819 of a 900-step-old tape.
+- `collatz-bigwild-b1k-stripe.png` and `collatz-bigwild-b4k-stripe.png`:
+  BASE-WINDOW champions - natural crystallizations pinned at fixed height
+  just past the start column: wild layer-cake stripes, the large-tape
+  structure the small scans could not have seen. Both reproduced exactly
+  by the pure x3 flow at those heights.
+
+Standing total for the left-edge program: ~4.3 BILLION seeds from 18 to
+16,384 bits, three frames, seven channels across passes: every structured
+seed is an archimedean aim (mantissa or affine-tipped); the only universal
+structure is the continued-fraction skeleton. The left edge holds nothing
+else, and at Lou's requested scale the wild aims now come with 34-40 bit
+crystal moments - big enough to see from across the room.
+
+## Bulk physics on kilobit tapes (2026-08-23, `tools/collatz_bulkphysics.py`)
+
+Lou, on the big-scan champions: "random large wedges are not super
+interesting though." Correct - they are the extreme-value tail of a known
+null. What kilobit tapes are actually FOR is room: designed objects living
+hundreds of cells from both edges. Two experiments, both [real-CA]:
+
+**The bulk light cone** (`collatz-bulk-lightcone.png`). Flip one bit at
+position 600 of a 1200-bit tape and XOR the two real runs. The influence
+wedge climbs at measured 1.5891 cells/step (log2 3 = 1.5850) - EXACTLY
+parallel to the MSB front, at constant lag behind it forever: the bulk can
+never catch the left edge (the difference of the two runs is exactly
+3^r * 2^600 while the rhythms agree, and its top runs parallel to the
+front). The wedge floor stays pinned at the flipped bit until the
+LeastEdge arrives at step 291; then the rhythm forks and everything above
+the sea rewrites - yet even the forked futures stay inside the same
+1.585 cone. One picture states the machine's causal structure: influence
+travels left at exactly log2(3), the front is causally out of reach from
+inside, and the only way a bulk cell changes the future is to WAIT for
+the sea to read it.
+
+**Bulk gliders, alive** (`collatz-bulk-gliders.png`). The x3 traveling
+crystals (rigid texture shift iff 3 = 2^k mod d, from the atlas) had only
+ever been seen in the x3-bulk model or as void-sector transients. On a
+1,181-bit real tape there is room to stage them mid-tape: a d=13 band
+(word of 1/13, period 12) above a d=5 band (word of 1/5, period 4).
+Measured phase velocities in the real machine: 3 cells/step for d=5
+(3 = 2^3 mod 5) and 4 cells/step for d=13 (3 = 2^4 mod 13) - both FASTER
+than the 1.585 envelope; the texture races through its own light cone
+(phase vs group velocity, literally). Where the lower band's envelope
+reaches the upper band the carries braid them into a mixing wedge; the
+pure stripes survive above it until the sea ends the show. The zoo now
+has live bulk fauna in the real automaton, not just in the proxy.

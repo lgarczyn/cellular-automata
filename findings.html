@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collatz as a cellular automaton — findings</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>Collatz as a cellular automaton</h1>
+  <p>What a long-running notebook of experiments on <strong>CA.CollatzStep</strong> actually
+     established — the automaton itself, the statistics of its rows, the pattern algebra of
+     its bulk, and the machines that can and cannot be built in it.</p>
+</header>
+
+<nav>
+  <a href="index.html">&larr; Demos</a>
+  <a href="#automaton">The automaton</a>
+  <a href="#value">The value map</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#halfmachine">Half machine</a>
+  <a href="#machines">Machines</a>
+  <a href="#monster">Monster hunt</a>
+  <a href="#errors">Errors</a>
+</nav>
+
+<!-- ============================================================ -->
+<section class="findings" id="scope">
+  <h2>How to read this page</h2>
+  <p>Four different systems live in this repo and they answer different questions. Mixing them
+     up cost this project weeks, so every claim below is tagged with the model it was measured
+     in. A result in one model is <em>not</em> a fact about another.</p>
+  <div class="scope-key">
+    <span class="scope scope-real">[real-CA]</span>
+    <div><strong>CA.CollatzStep</strong>, the actual automaton: <code>3n+1</code> with the
+      LeastEdge stripping trailing zeros on the LSB side.</div>
+    <span class="scope scope-value">[value]</span>
+    <div>Integer Collatz trajectories and their statistics. These <em>are</em> the rows of the
+      real automaton, so they are valid — but they are not spatial.</div>
+    <span class="scope scope-bulk">[x3-bulk]</span>
+    <div>Pure multiplication by three with carries (<code>ca-mul3.js</code>). The correct local
+      physics deep inside a giant number, where the halving is far away. Valid about
+      <code>&times;3</code>; not about Collatz globally.</div>
+    <span class="scope scope-ring">[ring]</span>
+    <div>A modular simulation window (mod <code>2<sup>W</sup></code> or
+      <code>2<sup>W</sup>&minus;1</code>). Lossy: the wrap can manufacture artifacts, and one
+      famous one is retracted at the bottom of this page.</div>
+  </div>
+  <p class="dim">Orientation throughout: <strong>the most significant bit is on the LEFT</strong>.
+     Numbers grow leftward at <code>log&#8322;3 &asymp; 1.585</code> bits per odd step; the
+     LeastEdge consumes on the right.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="findings" id="automaton">
+  <h2>1. What the automaton is</h2>
+
+  <p><strong>CA.CollatzStep</strong> renders one odd Collatz step per display row: multiply by
+    three, add one, then strip <em>all</em> trailing zeros. The Python port
+    <code>tools/collatz_real.py</code> is verified cell-for-cell against the JS module; seed 27
+    gives the rows 27, 41, 31, 47, 71, 107, 161, 121, 91, 137, &hellip;
+    <span class="scope scope-real">[real-CA]</span></p>
+
+  <figure class="fig">
+    <img src="images/collatz-hex-27.png" alt="Hex render of CA.CollatzStep from seed 27">
+    <figcaption><span class="scope scope-real">[real-CA]</span>
+      Seed 27 in the app's hexagon layout, MSB on the left. The purple-and-black band is the
+      number's bits; the solid green field is the LeastEdge, the region already eaten from the
+      LSB side. As rows descend the band marches left — that leftward march is the number
+      growing. <span class="file">images/collatz-hex-27.png</span></figcaption>
+  </figure>
+
+  <h3>Display rows are not the machine state</h3>
+  <p>The causal time slices of this automaton are the <strong>antidiagonals</strong>
+    <code>t = r + c</code>, not the rows. The carry crosses those slices, so the interior state
+    is <strong>two bits per cell</strong>: <code>(digit, carry)</code>. The six display tiles are
+    <code>0</code>, <code>0+</code>, <code>1</code>, <code>1+</code>, <em>null</em> (beyond the
+    MSB) and <em>LeastEdge</em>. The digit update is XOR (linear over GF(2)); the carry update is
+    a <strong>majority gate</strong>, which is genuinely nonlinear — the reason arguments from
+    the linearity of <code>x &rarr; 3x</code> do not transfer to this machine.
+    <span class="scope scope-real">[real-CA]</span></p>
+
+  <figure class="fig">
+    <img src="images/collatz-offshell-verify.png" alt="Row-major and antidiagonal simulators compared, zero mismatches">
+    <figcaption><span class="scope scope-real">[real-CA]</span>
+      Three stacked panels: the row-major CollatzStep grid for seed 27 (legend: 0, 0+, 1, 1+,
+      LeastEdge, void), the antidiagonal <code>(digit, carry)</code> machine started from slices
+      <code>t = 6, 7</code> of that same grid, and the cellwise difference — <strong>0
+      mismatches</strong>. The antidiagonal frame is the real state space, and it reproduces the
+      display exactly. <span class="file">images/collatz-offshell-verify.png</span></figcaption>
+  </figure>
+
+  <h3>The survival balance</h3>
+  <p>The MSB edge advances at <code>log&#8322;3 = 1.585</code> bits per odd step; the LeastEdge
+    consumes at the mean halving count <code>v&#772;</code> per step. Net growth is
+    <code>1.585 &minus; v&#772;</code>. Measured on the real automaton: all-ones
+    <code>2<sup>50</sup>&minus;1</code> gives <code>v&#772; = 1.824</code>, random numbers
+    <code>1.984</code>, sparse numbers <code>2.046</code>. Consumption always wins, so every
+    number tested shrinks to 1 — and the one property that predicts <em>how slowly</em> is the
+    density of 1s. <span class="scope scope-real">[real-CA]</span></p>
+
+  <figure class="fig">
+    <img src="images/collatz-hex-allones_240-1.png" alt="Hex render of the all-ones seed 2^40-1 descending in 191 odd steps">
+    <figcaption><span class="scope scope-real">[real-CA]</span>
+      The all-ones seed <code>2<sup>40</sup>&minus;1</code>, 191 odd steps to 1. Top right: a
+      solid light-purple climb region where nearly every step halves only once. Left: the
+      Sierpinski-like carry texture of the growing MSB front. Right: the green LeastEdge eating
+      the number away. A same-length sparse seed takes 56 steps, a random one 119.
+      <span class="file">images/collatz-hex-allones_240-1.png</span></figcaption>
+  </figure>
+
+  <p class="dim">The wall, stated honestly: a structure that sustained
+    <code>v&#772; &lt; log&#8322;3</code> forever would be a divergent trajectory. That is the
+    open Collatz problem itself, and nothing on this page claims to have crossed it.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="findings" id="value">
+  <h2>2. The value map: stopping times and the log&#8322;3 quasicrystal</h2>
+
+  <p>Plot total stopping time against input and the picture is full of structure. Every layer of
+    it turned out to be explainable — which means it is telling you about the coordinate system,
+    not about Collatz. The programme was to name each layer and remove it.
+    <span class="scope scope-value">[value]</span></p>
+
+  <figure class="fig">
+    <img src="images/collatz-log-x-1e9.png" alt="Collatz total stopping time for n up to 10^9 on a log-x axis">
+    <figcaption><span class="scope scope-value">[value]</span>
+      Total stopping time for <code>n = 1 &hellip; 10<sup>9</sup></code> with a logarithmic x
+      axis. Inputs are generated multiplicatively, so log x is the right axis: the cloud becomes
+      a linear fan of dashes with a straight upper edge of record holders. Longest trajectory in
+      range: 986 steps. <span class="file">images/collatz-log-x-1e9.png</span></figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>The dashes are recipes.</strong> A trajectory is <code>a</code> halvings and
+      <code>b</code> triplings; landing on 1 needs <code>2<sup>a</sup> &asymp; n&middot;3<sup>b</sup></code>,
+      so one <code>(a, b)</code> pair only works for <code>n</code> in a narrow window. A dash spans a
+      factor of <strong>1.25</strong> in <code>n</code> at every scale; at fixed step count dashes
+      repeat every <strong>&times;6</strong> (one tripling traded for one halving); at fixed
+      <code>n</code> step counts are quantised by <code>1 + log&#8322;3 &asymp; 2.585</code>.</li>
+    <li><strong>The line families are lattice directions.</strong> A Radon scan finds six slopes,
+      every one a move <code>(&Delta;a, &Delta;b)</code>. The steep families exist because
+      <code>2<sup>3</sup> &asymp; 3<sup>2</sup></code>, and the whole ladder of steepnesses is the
+      continued fraction of <code>log&#8322;3</code> — 3/2, 8/5, 19/12, 65/41, 84/53 — each a better
+      near-miss producing a fainter, steeper family. This is the quasicrystal.</li>
+    <li><strong>The y axis was wrong too.</strong> "Iterations" adds halvings and triplings as if
+      they cost the same. Recode height as <code>b = (s &minus; log&#8322;n)/(1 + log&#8322;3)</code>
+      and it recovers the true tripling count exactly (100.00% on 4000 random
+      <code>n &lt; 10<sup>7</sup></code>).</li>
+    <li><strong>What is left is stationary.</strong> <code>b</code> grows 2.4008 per doubling of
+      <code>n</code> against the theoretical <code>1/log&#8322;(4/3) = 2.4094</code>. Subtract the
+      trend, divide by <code>&radic;log&#8322;n</code>, and five decades collapse onto one
+      distribution: sd 5.19, 5.08, 4.99, 5.01, 5.04. The <code>&radic;log n</code> scaling says the
+      residual is a random walk in disguise; it is right-skewed, and no closed-form law has been
+      fitted to it.</li>
+  </ul>
+
+  <figure class="fig">
+    <img src="images/collatz-transforms.png" alt="Three panels: raw log-x fan, y recoded as tripling count, detrended residual collapsing across decades">
+    <figcaption><span class="scope scope-value">[value]</span>
+      Peeling the coordinate system. Left: the raw log-x fan. Middle: <code>y</code> recoded as
+      the tripling count <code>b</code> against <code>log&#8322;n</code> — the 2.585 quantisation
+      is gone. Right: detrended and divided by <code>&radic;log&#8322;n</code>, five decades from
+      <code>10<sup>2</sup></code> to <code>10<sup>7</sup></code> land on the same right-skewed
+      distribution (sd 5.19 &rarr; 5.04).
+      <span class="file">images/collatz-transforms.png</span></figcaption>
+  </figure>
+
+  <p class="dim">A further shear, <code>x&Prime; = 1.934&middot;log&#8322;n + 0.0657&middot;s</code>,
+    is exactly the integer <code>2a &minus; 3b</code>, which turns the plot into evenly spaced
+    columns whose interiors are perfect ladders. Collapsing all columns onto one lands back on the
+    detrended residual, agreeing to five decimal places — two independent routes to the same
+    object. <span class="scope scope-value">[value]</span></p>
+</section>
+
+<!-- ============================================================ -->
+<section class="findings" id="patterns">
+  <h2>3. Patterns and composition in the bulk</h2>
+
+  <p>Deep inside an absurdly large number the halving is far away and invisible; locally the rule
+    is multiplication by three with carries. That is a genuine, different automaton, and it has a
+    complete theory. Two things make it more than a toy: the void beyond the real automaton's MSB
+    provably runs pure <code>&times;3</code> until the host front absorbs it
+    <span class="scope scope-real">[real-CA]</span>, so this algebra is the physics of that
+    sector; and everything below is exact.
+    <span class="scope scope-bulk">[x3-bulk]</span></p>
+
+  <h3>A pattern is a rational number</h3>
+  <p>A spatially periodic state of period <code>p</code> with cell value <code>X</code> is the
+    repeating binary expansion of <code>r = X/(2<sup>p</sup>&minus;1)</code>, and
+    <code>X &rarr; 3X</code> is just <code>r &rarr; 3r</code>. Writing <code>r = a/d</code> in
+    lowest terms gives all three numbers at once: the pattern is persistent iff
+    <code>3 &#8740; d</code>, its spatial period is <code>ord<sub>d</sub>(2)</code> and its
+    temporal period is <code>ord<sub>d</sub>(3)</code>. "Which structures exist" becomes a
+    catalogue rather than a search. <span class="scope scope-bulk">[x3-bulk]</span></p>
+
+  <h3>The charge law</h3>
+  <p>Superposing two patterns always works (denominators go to the lcm). Laying blocks
+    <em>side by side</em> has a real compatibility condition, and it is a congruence. With the
+    3-adic quota <code>q<sub>n</sub> = v&#8323;(2<sup>n</sup>&minus;1)</code>, two width-<code>L</code>
+    blocks compose iff</p>
+  <pre><code>A &equiv; B   (mod 3^q<sub>2L</sub>),   q<sub>2L</sub> = v&#8323;(2<sup>2L</sup> &minus; 1)</code></pre>
+  <p>so compatibility is an <em>equivalence relation</em>: every persistent block carries a
+    <strong>charge</strong>, and two blocks compose exactly when their charges match. Verified
+    exhaustively for <code>L &le; 7</code>, <code>k &le; 4</code>. When the quotas agree there is
+    one class and everything composes with everything.
+    <span class="scope scope-bulk">[x3-bulk]</span></p>
+
+  <div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>L</th><th>blocks</th><th>charges</th><th>pairs that compose</th></tr></thead>
+    <tbody>
+      <tr><td>5</td><td>32</td><td>3</td><td>33.4%</td></tr>
+      <tr><td>6</td><td>8</td><td>1</td><td>100%</td></tr>
+      <tr><td>7</td><td>128</td><td>3</td><td>33.3%</td></tr>
+      <tr><td>9</td><td>512</td><td>27</td><td>3.7%</td></tr>
+      <tr><td>12</td><td>456</td><td>1</td><td>100%</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <figure class="fig">
+    <img src="images/collatz-atlas.png" alt="Compatibility atlas: charge-sorted matrices are block diagonal, plus a permanent wall and a mismatched pair">
+    <figcaption><span class="scope scope-bulk">[x3-bulk]</span>
+      The compatibility atlas. Top row and bottom left: which blocks can sit side by side, sorted
+      by charge — the matrices are literally block-diagonal (one solid class at
+      <code>L = 6</code>, 27 tiny classes at <code>L = 9</code>). Bottom middle: a matched-charge
+      pair forming a <strong>permanent standing domain wall</strong>, period 36, that never
+      erodes. Bottom right: a mismatched pair burning off its 3-part in three steps and landing on
+      a different orbit. <span class="file">images/collatz-atlas.png</span></figcaption>
+  </figure>
+
+  <p>Extending past pairs, the law becomes a signed 3-adic accounting: debt only lives on even
+    window widths, strict triples (<code>ABC</code> legal while every pair is illegal) exist
+    exactly for odd <code>L</code>, and at <code>k = 4</code> the condition is an
+    <em>alternating</em> sum — so the order of the blocks matters, and palindromes such as
+    <code>ABBA</code> can rescue a forbidden pair. Machine-flavoured: parts that only work in the
+    right order. <span class="scope scope-bulk">[x3-bulk]</span></p>
+
+  <h3>Persistence is not composition</h3>
+  <p>A word can persist forever and still lose everything about its parts. Splitting a word into
+    background plus defect field shows where the blow-up comes from: the background contributes
+    exactly the part's own period, and every bit of the excess is the defect. Call a word a
+    <em>true composition</em> when its period divides the lcm of its distinct blocks' periods —
+    no new frequencies. Exhaustively: at <code>L = 5</code> and <code>L = 7</code> <strong>every
+    genuine two-block word composes truly</strong> (310/310 and 5334/5334), at <code>k = 3</code>
+    only <code>ABC</code> survives (180 of 32730; 6090 of 2097018), and
+    <code>A<sup>k</sup>B</code> for <code>k &ge; 3</code> <strong>never</strong> composes truly at
+    any <code>L &le; 16</code> — repetition is exactly what lets the defect reach the primitive
+    prime divisors of <code>2<sup>kL</sup>&minus;1</code>.
+    <span class="scope scope-bulk">[x3-bulk]</span></p>
+
+  <figure class="fig">
+    <img src="images/collatz-truecomp.png" alt="Six ring spacetimes showing true compositions and one persisting non-composition">
+    <figcaption><span class="scope scope-bulk">[x3-bulk]</span>
+      Three full periods of each word, white lines marking one period. Five true compositions —
+      <code>AB</code> words cycling in 5, 3 and 42 while their parts cycle in 30, 6 and 126, and
+      two <code>ABC</code> words — and, bottom right, an <code>AAB</code> word whose period blows
+      up five-fold to 150: it persists, but nothing of <code>A</code> survives into it.
+      <span class="file">images/collatz-truecomp.png</span></figcaption>
+  </figure>
+
+  <h3>Traveling crystals, and the glider that is not there</h3>
+  <p>A crystal with denominator <code>d</code> translates rigidly iff
+    <code>3 &equiv; 2<sup>k</sup> (mod d)</code>: after one step the pattern is exactly itself,
+    shifted by <code>k</code> cells, with no dispersion. 58 denominators below 400 do this, and
+    several move <strong>toward the MSB</strong> — <code>d = 13</code> at 4 cells/step,
+    <code>d = 29</code> at 5, <code>d = 61</code> at 6. These are shift eigenvectors of the
+    <code>&times;3</code> map, not perturbations.
+    <span class="scope scope-bulk">[x3-bulk]</span></p>
+
+  <figure class="fig">
+    <img src="images/collatz-traveling.png" alt="Four ring spacetimes of rigidly translating crystals with their exact velocities drawn">
+    <figcaption><span class="scope scope-bulk">[x3-bulk]</span>
+      Rigid traveling crystals, MSB left, with the exact predicted velocity drawn as a pink line
+      through the texture: <code>d = 5</code> shifts right 1 cell/step, <code>d = 11</code> right
+      2, <code>d = 29</code> <strong>left 5</strong>, <code>d = 61</code> <strong>left 6</strong>.
+      The shape is preserved exactly, step after step.
+      <span class="file">images/collatz-traveling.png</span></figcaption>
+  </figure>
+
+  <div class="callout negative">
+    <p><strong>Honest negative.</strong> A <em>localized</em> left-moving glider — a bounded
+      packet travelling against a crystal ether, the Rule-110 building block — was searched for
+      properly and not found: 262,143 localized <code>(digit, carry)</code> seeds on vacuum, 142
+      spatially and temporally periodic ethers, and more than 1.3 million defects placed
+      exhaustively on the 40 most structured of them. Every defect either dies or grows past 40
+      cells within at most 77 steps. Zero gliders.
+      <span class="scope scope-bulk">[x3-bulk]</span></p>
+    <p style="margin-bottom:0">This is a search result in the <code>&times;3</code>-with-carry
+      model under a free MSB and a <em>looping</em> right edge — where there are no trailing zeros
+      to eat, so no consumption exists to balance the growth. It is not a theorem about
+      CA.CollatzStep. The earlier claim that localized left-movers were "provably impossible" is
+      <a href="#errors">retracted below</a>: that proof used the linearity of
+      <code>x &rarr; 3x</code>, and the real carry is a majority gate.</p>
+  </div>
+
+  <p class="dim">The same negative, in one sentence: the bulk supports <em>storage</em> — regions
+    that remember a state indefinitely — but not <em>signals</em>, because a domain wall disperses
+    at the same rate as a single-bit defect. Storage without communication is the one combination
+    that cannot be assembled into a machine.
+    <span class="scope scope-bulk">[x3-bulk]</span></p>
+</section>
+
+<!-- ============================================================ -->
+<section class="findings" id="halfmachine">
+  <h2>4. The half machine</h2>
+
+  <p>The <strong>half machine</strong> is the configuration where the right (LSB) side loops and
+    the left (MSB) edge is free to grow. One edge loops, one does not — a full cycle with both
+    edges closed is a different, and excluded, object. Looping the right side is a lens: it says
+    "we are in the middle of a giant number", not "we are doing modular arithmetic".</p>
+
+  <h3>The half-open model</h3>
+  <p>Give a crystal back its MSB edge but keep the right side looping and the configuration is a
+    <em>real number</em>: an integer head <code>H</code> plus a repeating binary fraction
+    <code>f = X/(2<sup>p</sup>&minus;1)</code>. One step sends
+    <code>X &rarr; 3X mod (2<sup>p</sup>&minus;1)</code> and <code>H &rarr; 3H + q</code>, so the
+    whole configuration at time <code>t</code> is <code>3<sup>t</sup>f&#8320;</code> written in
+    binary. Three consequences, all measured:
+    <span class="scope scope-bulk">[x3-bulk]</span></p>
+  <ul>
+    <li>The MSB edge sits at <code>t&middot;log&#8322;3 + log&#8322;(a/d)</code>. The
+      <em>slope is universal</em> — ten crystals measured, all 1.5848–1.5852 — and the pattern
+      sets only the offset, exactly: <code>H/3<sup>t</sup> &rarr; a/d</code> verified to twelve
+      digits. Different patterns give parallel lines that never cross.</li>
+    <li>The tail is untouchable. Carries move only LSB &rarr; MSB, so the light cone is one-sided
+      and no pattern is ever damaged from above. Cut the tail off instead of looping it and the
+      truncation eats upward at <code>log&#8322;3</code> — measured 1.5854, 1.5870, 1.5832
+      cells/step. Looping the <em>right</em> edge was the necessary move.</li>
+    <li>What grows on the left is not noise. The carry stream is digit-for-digit the base-3
+      expansion of <code>a/d</code>: the head is a crystal too, just rendered in the wrong base.</li>
+  </ul>
+
+  <figure class="fig">
+    <img src="images/collatz-halfopen.png" alt="Six panels of the half-open universe: head and looping tail, the universal log2(3) slope, the base-3 head, and truncation eating upward">
+    <figcaption><span class="scope scope-bulk">[x3-bulk]</span>
+      The half-open universe. Top: three configurations (tail denominators 7, 31, 73) — the
+      looping tail on the right, the head growing leftward out of it at the same angle in every
+      case. Bottom left: MSB position against step for ten crystals, all on parallel lines of
+      slope <code>log&#8322;3</code>. Bottom middle: the same head drawn in base 3 — the periodic
+      expansion of 1/7, a crystal, not chaos. Bottom right: what happens if you <em>don't</em>
+      loop the right edge — truncation eats upward at 1.585 cells/step.
+      <span class="file">images/collatz-halfopen.png</span></figcaption>
+  </figure>
+
+  <p>That also settles why this machine cannot close a loop by itself: the edge angle is
+    <code>log&#8322;3</code> for <em>every</em> configuration of this kind, so it is irrational no
+    matter what you put in the tail, and an irrational edge angle never returns to where it
+    started. <span class="scope scope-bulk">[x3-bulk]</span></p>
+
+  <h3>The fuse law</h3>
+  <p>On the real automaton the interface behaves like a player piano. Prescribe a periodic halving
+    rhythm <code>(v&#8321; &hellip; v<sub>l</sub>)</code> with sum <code>S</code>. Every such
+    rhythm has a <strong>rational runner</strong></p>
+  <pre><code>n* = C / (2<sup>S</sup> &minus; 3<sup>l</sup>),   C = &Sigma;<sub>j</sub> 3<sup>l&minus;1&minus;j</sup> 2<sup>v&#8321;+&hellip;+v<sub>j</sub></sup></code></pre>
+  <p>and a tape performs that rhythm for a number of steps fixed exactly by how far it agrees with
+    the runner 2-adically. With <code>A = v&#8322;(n &minus; n*)</code> the number of low bits of
+    agreement, the rhythm runs precisely
+    <code>D(A) = min{ j : S<sub>j</sub> + v<sub>j+1</sub> &ge; A }</code> steps. Zero exceptions in
+    640,000 trials plus an independent check, and the seeds sustaining a given <code>v</code>-prefix
+    form exactly one residue class mod <code>2<sup>S+1</sup></code>. The overshoot past the designed
+    region is not luck either — it is fair-coin geometric,
+    <code>P(A &minus; m &ge; j) = 2<sup>&minus;j</sup></code>, because the free high bits happen to
+    match the runner's next 2-adic digits or they do not.
+    <span class="scope scope-value">[value]</span></p>
+
+  <div class="callout">
+    <strong>Fuse lifetime = the number of digits of the runner you actually wrote down.</strong>
+    No tape structure beats it; nothing extends it. Designed bits burn at about one LSB bit per odd
+    step, while the exchange rate from designed bits into carry bits is
+    <code>log&#8322;3 &minus; 1 = 0.585 &lt; 1</code> — so a fuse can never pay for its own
+    replacement. There is no bootstrap.
+    <span class="scope scope-value">[value]</span>
+  </div>
+
+  <figure class="fig">
+    <img src="images/collatz-runners-hex.png" alt="Hex render of the best 64-bit fuse for the all-halvings-equal-one rhythm">
+    <figcaption><span class="scope scope-real">[real-CA]</span>
+      The best 64-bit fuse found for the rhythm <code>(1)</code>,
+      <code>n = 16609275425742389247</code>. Forty designed bits buy 39 guaranteed steps; the free
+      high bits happened to reproduce 15 further runner digits, so it ran 54 steps at one halving
+      each before breaking. Left of the break the climb is the smooth light-purple wedge; after it
+      the rows are ordinary Collatz again.
+      <span class="file">images/collatz-runners-hex.png</span></figcaption>
+  </figure>
+
+  <h3>What the rhythm hears, and what it does not</h3>
+  <p>The rhythm is a real readout of spatial structure. A crystal tail of width <code>L</code> is
+    consumed to an exactly periodic beat equal, step for step, to the odd-map orbit of the 2-adic
+    rational <code>&minus;A/(2<sup>L</sup>&minus;1)</code> — 180 of 180 crystals, against an
+    autocorrelation of 0.71&plusmn;0.16 for crystals versus 0.21&plusmn;0.04 for random tails
+    (Cohen's <em>d</em> = 4.9). A block boundary is audible to the bit: over 1888 composed pairs
+    the beat diverges from the pure-<code>A</code> ideal exactly when the halving window pokes past
+    the interface (median +1 bit, 1404/1404 blind changepoints at the predicted step).
+    <span class="scope scope-real">[real-CA]</span></p>
+
+  <div class="callout negative">
+    <p style="margin-bottom:0"><strong>Honest negative.</strong> The <code>&times;3</code> charge —
+      the quantity that decides composability in the bulk atlas — has <em>no</em> measurable effect
+      on the LeastEdge rhythm, the consumption rate, or the recovery time, across roughly 2400 runs
+      and three geometries (<code>|d| &le; 0.1</code> everywhere). Charge is void physics, not
+      interface physics. What destroys structure at a domain wall is a universal wedge of disorder
+      radiating MSB-ward at about <code>log&#8322;3</code> bits per step, and its <em>size</em>,
+      not the charge, sets how long the rhythm stays disordered.
+      <span class="scope scope-real">[real-CA]</span></p>
+  </div>
+
+  <figure class="fig">
+    <img src="images/collatz-bridge-wedge.png" alt="Defect density above the A|B interface for matched and mismatched charge, and coincident wedge growth curves">
+    <figcaption><span class="scope scope-real">[real-CA rows]</span>
+      The disorder wedge a domain wall drives into the <code>B</code> region while the front eats
+      <code>A</code>. Left and middle: mean defect density above the interface for matched and for
+      mismatched charge — visually the same triangle. Right: the two wedge-growth curves plotted
+      together; they lie on top of each other and follow the dashed <code>log&#8322;3</code> line.
+      Charge-blind. <span class="file">images/collatz-bridge-wedge.png</span></figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section class="findings" id="machines">
+  <h2>5. Machines that were actually built</h2>
+
+  <p>Given all of the above, what can be constructed? Four things, each honest about its model.</p>
+
+  <h3>The bloom: growth past its own boundary</h3>
+  <p>Pick a crystal tile <code>T</code> divisible by <code>3<sup>r</sup></code>. The seed
+    <code>s = T/3<sup>r</sup></code> is a <em>smaller</em> number whose orbit grows leftward
+    <strong>into</strong> perfect crystal: after <code>r</code> steps the crystal extends about
+    <code>1.585&middot;r</code> columns past the seed's initial MSB. A deep search over random
+    same-size seeds found nothing else that does this — the bloom family is constructive. The
+    growth is prepaid: <code>r</code> bloom steps cost roughly <code>3<sup>r</sup></code> of tape.
+    <span class="scope scope-real">[real-CA void sector]</span></p>
+
+  <figure class="fig">
+    <img src="images/collatz-bloom.png" alt="The bloom machine growing leftward past its initial MSB boundary into perfect crystal">
+    <figcaption><span class="scope scope-real">[real-CA void sector]</span>
+      The bloom. The gold vertical line is the seed's initial MSB boundary; the black region to
+      its left is empty void. As the rows descend the crystal texture fills that void — the
+      pattern grows <strong>left, past where it started</strong> — and by the green line at step 6
+      the full 162-tile, 1296-bit perfect crystal exists. Row-by-row legality in the real
+      automaton was asserted. <span class="file">images/collatz-bloom.png</span></figcaption>
+  </figure>
+
+  <h3>Long-lived tiled survivors</h3>
+  <p>An exhaustive leaderboard over every pattern up to <code>L = 14</code>, ranked by survival per
+    tape bit (the reciprocal mean halving of its ideal cycle), makes all-ones the provable champion
+    at one step per bit; the best non-trivial machines reach about 0.52. Lifetime is then linear in
+    the number of tiles you are willing to pay for — which is the fuse law wearing a different hat.
+    <span class="scope scope-real">[real-CA]</span></p>
+
+  <figure class="fig">
+    <img src="images/collatz-bigsurvivor.png" alt="The L=5 twelve-face machine at N=44 over its entire 476-step life">
+    <figcaption><span class="scope scope-real">[real-CA]</span>
+      The <code>L = 5</code> twelve-face machine at <code>N = 44</code> (220 bits) over its entire
+      life, 476 odd steps. MSB left, LeastEdge right. The narrow purple band is the machine,
+      pinched between black void on the left and the advancing green LeastEdge on the right; the
+      uneaten part stays pristine crystal to the last tile, and the LeastEdge is the only thing
+      that ever destroys it. <span class="file">images/collatz-bigsurvivor.png</span></figcaption>
+  </figure>
+
+  <h3>The composed machine, seen in its own frame</h3>
+  <p>Stack <code>|A&hellip;A|B</code> and the raw spacetime drifts diagonally, hiding the
+    structure. Align every row on the LeastEdge front instead — the machine's own frame — and the
+    behaviour is literally periodic, with the two blocks running different programs and a visible
+    handoff between them. <span class="scope scope-real">[real-CA]</span></p>
+
+  <figure class="fig">
+    <img src="images/collatz-composed-loop.png" alt="The composed machine |A...A|B rendered in the LeastEdge front's own frame">
+    <figcaption><span class="scope scope-real">[real-CA]</span>
+      <code>|A&hellip;A|B</code> with rows aligned on the LeastEdge front (green column, right).
+      In the <code>A</code> phase each loop is 2 steps of the (1,3) beat and the texture ahead of
+      the front repeats identically — 20 full loops, white lines marking them. The gold trace is
+      the <code>|</code> boundary bit drifting toward the front; the red line is the handoff, after
+      which the all-ones <code>B</code> phase runs one loop per row.
+      <span class="file">images/collatz-composed-loop.png</span></figcaption>
+  </figure>
+
+  <h3>The immortal crystal and the lego crystal</h3>
+  <p>Loop the MSB as well and the survivors stop dying. This is a <strong>ring</strong> model — a
+    periodic window, with no free growing edge — so nothing here is a statement about a finite
+    number under the real automaton; it is a statement about what the pattern algebra allows when
+    nothing can leak out.</p>
+
+  <figure class="fig">
+    <img src="images/collatz-immortal.png" alt="A crystal with the MSB looped, returning exactly with period 30">
+    <figcaption><span class="scope scope-ring">[ring: looped MSB, x3 mod 2<sup>60</sup>&minus;1]</span>
+      The same crystal with the MSB looped is immortal: the texture is unchanged over the whole
+      render and the state returns exactly with period 30, verified. Nothing leaks into the
+      pattern, ever. <span class="file">images/collatz-immortal.png</span></figcaption>
+  </figure>
+
+  <p>The lego crystal answers the composition question constructively. Width-6 bricks with
+    <code>v&#8323; &ge; 2</code> all share a single charge class, so <em>every</em> assembly of
+    them persists: <code>A = 010010</code>, <code>B = 101101</code> and a wall
+    <code>| = 111111</code> build the unit cell <code>|A|B|</code>, tiled four times on a 96-cell
+    ring. Every one of the 480 rendered rows is a perfect period-24 crystal and the state returns
+    exactly after 240 steps. Rebuild them as <code>|A|A|B|</code> or <code>|A|B|B|</code> and those
+    persist too, at period 108 on their rings — the bricks really are legos.
+    <span class="scope scope-ring">[ring: looped MSB, x3]</span></p>
+
+  <figure class="fig">
+    <img src="images/collatz-lego.png" alt="The lego crystal: |A|B| unit cell tiled four times, looping exactly every 240 steps">
+    <figcaption><span class="scope scope-ring">[ring: looped MSB, x3]</span>
+      The lego crystal. Top strip: rows 0–4 against rows 240–244, identical — proof of the loop.
+      Main panel: 480 steps on a 96-cell ring, MSB left, with thick white lines at the
+      <code>|A|B|</code> unit-cell boundaries and a red line at step 240 where the state returns.
+      The two bricks keep their own textures inside every cell.
+      <span class="file">images/collatz-lego.png</span></figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section class="findings" id="monster">
+  <h2>6. The monster hunt</h2>
+
+  <p>The protocol assembled from everything above: a right edge that blocks consumption (an
+    all-ones tape, <code>v = 1</code> guaranteed), a left edge that preserves its cargo bits during
+    the climb, and a search over the cargo for a lucky fall. Run for real — about six hours of
+    hunting on 16 cores plus a seven-minute certification sweep — it produced two kinds of monster,
+    both verified exactly in Python with no floating point and no modular window.
+    <span class="scope scope-value">[value]</span></p>
+
+  <h3>Designed, certified, no search</h3>
+  <p>Take <code>n = 2<sup>K</sup> &minus; 1</code>, the all-ones tape. The fuse law guarantees
+    <code>K</code> climb steps at <code>v = 1</code>, so the step count is bought, not found. Two
+    sizes were run to completion in exact integer arithmetic:
+    <span class="scope scope-value">[value]</span></p>
+
+  <table class="data">
+    <thead><tr><th>seed</th><th>bits</th><th>odd steps</th><th>peak bits</th>
+      <th>predicted peak</th><th>odd/bit</th><th>runtime</th></tr></thead>
+    <tbody>
+      <tr><td>2<sup>2<sup>20</sup></sup>&minus;1</td><td>1,048,576</td><td>5,044,234</td>
+        <td>1,661,954</td><td>1,661,954</td><td>4.811</td><td>20 min</td></tr>
+      <tr><td>2<sup>2<sup>22</sup></sup>&minus;1</td><td>4,194,304</td><td><strong>20,229,242</strong></td>
+        <td>6,647,814</td><td>6,647,815</td><td>4.823</td><td>127 min</td></tr>
+    </tbody>
+  </table>
+
+  <p>The larger seed reaches <strong>20,229,242 odd steps</strong>, roughly 52 million steps
+    counting halvings, and its summit is a number of 6,647,814 bits (about 2 million decimal
+    digits). Predicted peak is <code>K&thinsp;log<sub>2</sub>3</code> and the measurement lands
+    within <strong>1 part in 10<sup>7</sup></strong> at both sizes: the machine performs its
+    program and nothing else. Step count is linear in <code>K</code> with no ceiling, so an
+    "absolute record" here is a purchasing decision rather than a search.
+    <span class="scope scope-value">[value]</span></p>
+
+  <figure class="fig">
+    <img src="images/collatz-giant-shape.png"
+         alt="Density map of the whole life of an all-ones seed, showing two sectors during the climb">
+    <figcaption>The giant is too large to draw cell by cell (about 7&times;10<sup>13</sup> cells),
+      but its design is scale-free, so the same machine at 1/64 the linear size is the same picture.
+      Same frame and colours as the hex view above: green is tape already consumed by the LeastEdge
+      on the right, dark is the void beyond the MSB on the left, and each pixel is a square block of
+      378 cells a side. The climb has a closed form, verified rather than assumed:
+      <code>n<sub>r</sub> = 3<sup>r</sup>&thinsp;2<sup>K&minus;r</sup> &minus; 1</code>. That is two
+      sectors: the digits of <code>3<sup>r</sup></code> on the left (mottled, density 1/2) and the
+      untouched fuse of solid ones on the right (density 1), with the boundary walking left exactly
+      one cell per step while the MSB edge advances 1.585, so the body opens at 0.585 cells per step
+      for exactly K steps. Then the fuse is spent and the generic fall closes the body. Inset: real
+      cells at the sector boundary, no downsampling.
+      <span class="scope scope-real">[real-CA]</span>
+      <span class="file">images/collatz-giant-shape.png</span></figcaption>
+  </figure>
+
+  <h3>Searched, and proved class-maximal</h3>
+  <p>Classes <code>n = (m &lt;&lt; (j+1)) &minus; 1</code> leave exactly 31 free cargo bits, so
+    each class is only <code>2<sup>30</sup></code> wide and could be swept exhaustively. A
+    ~290&times;10<sup>9</sup>-trial random hunt and a deterministic sweep of every single
+    <code>m</code> returned the <em>same three champions</em>: these are class maxima, proved, not
+    lucky draws. Cross-check on coverage: the exhaustive sweep found 5485 seeds in the 80/48 class
+    exceeding <code>2<sup>125</sup></code> and the random hunt had logged exactly 5485 distinct
+    such seeds; all 5485 were rerun at 512-bit precision and the best reached 729 odd steps, below
+    the champion. Nothing hid in the discards.
+    <span class="scope scope-value">[value]</span></p>
+
+  <div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>class</th><th>n</th><th>odd steps</th><th>delay</th><th>peak bits</th><th>odd/bit</th></tr></thead>
+    <tbody>
+      <tr><td>48/16</td><td>268726926180351</td><td>581</td><td>1550</td><td>62</td><td>12.10</td></tr>
+      <tr><td>64/32</td><td>12503150712101797887</td><td>710</td><td>1899</td><td>86</td><td>11.09</td></tr>
+      <tr><td>80/48</td><td>1188923081869663116722175</td><td>868</td><td>2324</td><td>113</td><td>10.85</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <figure class="fig">
+    <img src="images/collatz-monster.png" alt="Bit-size against odd step for a designed giant and the three searched class champions">
+    <figcaption><span class="scope scope-value">[value]</span>
+      Designed climb versus searched luck; the vertical axis is the size of <code>n</code> in bits.
+      The designed <code>2<sup>512</sup>&minus;1</code> climbs as a dead-straight line that ends
+      exactly at step <code>K = 512</code> — one guaranteed step per tape bit — then descends over
+      2487 odd steps. The three exhaustively-proved class champions (581, 710 and 868 odd steps)
+      are the small curves along the bottom.
+      <span class="file">images/collatz-monster.png</span></figcaption>
+  </figure>
+
+  <div class="callout">
+    <strong>The punchline.</strong> Odd steps per bit fall monotonically with size — 12.10, 11.09,
+    10.85 for the searched champions, then 4.81 for the designed giant — while the designed floor
+    holds at about 4.82 steps per designed bit. <strong>Design scales linearly and without limit;
+    search buys a rate premium that decays like <code>ln(effort)</code> and only at small size.</strong>
+    Every blocker the protocol predicted held quantitatively.
+    <span class="scope scope-value">[value]</span>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="findings" id="errors">
+  <h2>7. Errors and retractions</h2>
+
+  <p>The notebook keeps its mistakes on purpose: most of them were vocabulary or model
+    substitutions, and each one has a corrected replacement. Nothing in this section should be
+    cited as a current result.</p>
+
+  <div class="retracted-item">
+    <p><span class="tag">RETRACTED</span> <strong>The block-of-ones fixed point.</strong> The claim
+      that <code>n = 2<sup>W&minus;1</sup>&minus;1</code> is a zero-halving fixed point that stops
+      LSB progression was an artifact of modelling "loop the MSB" as
+      <code>mod (2<sup>W</sup>&minus;1)</code>, whose end-around carry folds MSB overflow back onto
+      the LSB. That wrap is number theory, not the automaton.
+      <span class="scope scope-ring">[ring]</span><br>
+      <em>Corrected:</em> under real <code>3n+1</code> an all-ones block is not stable at all — it
+      sheds one bit per step for about <code>k</code> steps while its pattern morphs completely.
+      In the 2-adic limit <code>&hellip;1111 = &minus;1</code> genuinely is fixed, at exactly one
+      halving per step (the slowest a nonzero pattern can go), but that is an infinite object and
+      not a legal finite pattern. There is no finite fixed all-ones structure.</p>
+  </div>
+
+  <div class="retracted-item">
+    <p><span class="tag">RETRACTED</span> <strong>"Unit cells must be uniform textures."</strong>
+      False, and it was only a too-small search: <code>AAB</code>, <code>ABBA</code> and
+      <code>AABB</code> sectionings exist, and the <a href="#patterns">charge law</a> says exactly
+      which ones. <span class="scope scope-bulk">[x3-bulk]</span></p>
+  </div>
+
+  <div class="retracted-item">
+    <p><span class="tag">RETRACTED</span> <strong>"No localized left-mover, provably."</strong> The
+      proof used the linearity of <code>x &rarr; 3x</code>, which is the bulk/value map, not the
+      cellular automaton. In the real <code>(digit, carry)</code> state the carry update is a
+      majority gate and is nonlinear, so the dispersion argument does not apply and gliders are
+      possible in principle. The negative that survives is a <em>search</em> result in
+      <code>&times;3</code>-with-carry, stated as such
+      <a href="#patterns">above</a>. <span class="scope scope-bulk">[x3-bulk]</span></p>
+  </div>
+
+  <div class="retracted-item">
+    <p><span class="tag">MIS-SCOPED</span> <strong>"Crystals are not special."</strong> True of
+      finite-seed stopping times — crystal seeds descend in as many steps as random numbers of the
+      same 1-density <span class="scope scope-real">[real-CA]</span> — but it was over-read into
+      "the whole pattern zoo was an artifact". Finite-seed statistics do not probe bulk-interior
+      structure, and the void sector later showed that digit patterns beyond the MSB run pure
+      <code>&times;3</code> inside the real automaton until absorbed. The atlas is genuine physics
+      of that sector, and invalid as a claim about global Collatz behaviour.</p>
+  </div>
+
+  <div class="retracted-item">
+    <p><span class="tag">MIS-SCOPED</span> <strong>"Charge is carry content."</strong> A natural
+      conjecture, dead at the interface: charge never registers in the LeastEdge rhythm
+      (<code>|d| &le; 0.1</code>). It is a void/persistence quantity only.
+      <span class="scope scope-real">[real-CA]</span></p>
+  </div>
+
+  <p class="dim">The four recurring process errors behind all of these: substituting a tractable
+    proxy for the real automaton and calling the result impossible; treating display rows as the
+    machine state (which erases the carry field); drawing the MSB on the right, so growth appears
+    to run the wrong way; and translating "loop a side" into a modulus, which imports arithmetic
+    artifacts that have nothing to do with the automaton. Conclusions that depend on the wrap are
+    invalid by construction.</p>
+</section>
+
+<footer>
+  Sources: <span class="mono">COLLATZ.md</span> (lab notebook),
+  <span class="mono">tools/MANIFEST.md</span> (per-script model scope),
+  <span class="mono">CLAUDE.md</span> (conventions). Figures regenerate from the scripts in
+  <span class="mono">tools/</span>. Zero dependencies, pure HTML / CSS.
+</footer>
+
+</body>
+</html>

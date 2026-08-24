@@ -3,3 +3,9 @@
 !.github
 !.github/**
 !.nojekyll
+tools/collatz_steps
+tools/collatz_steps_*.bin
+tools/collatz_sieve
+tools/collatz_sieve_*.bin
+tools/collatz_antichain_*.bin
+__pycache__/
